@@ -6,7 +6,7 @@ import {
   FiMapPin, FiClock, FiBriefcase, FiDollarSign, FiHeart,
   FiArrowRight, FiCheck, FiStar, FiUsers, FiZap, FiTarget,
   FiGift, FiTrendingUp, FiSmile, FiCoffee, FiBook, FiAward,
-  FiChevronRight, FiPlay, FiSend, FiGlobe, FiLayers, FiCode
+  FiPlay, FiSend, FiGlobe, FiLayers
 } from 'react-icons/fi'
 
 function useInView(threshold = 0.15) {
@@ -34,26 +34,6 @@ function FadeUp({ children, className = '', delay = 0 }: { children: React.React
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
-    </div>
-  )
-}
-
-function AccordionItem({ question, answer }: { question: string; answer: string }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="border border-purple-100/50 rounded-lg overflow-hidden transition-all duration-300 hover:shadow-sm">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-3 sm:p-4 text-left bg-white hover:bg-purple-50/30 transition-colors"
-      >
-        <span className="text-xs sm:text-sm font-semibold text-gray-900 pr-3">{question}</span>
-        <FiChevronRight className={`w-4 h-4 text-purple-500 transition-transform duration-300 flex-shrink-0 ${open ? 'rotate-90' : ''}`} />
-      </button>
-      <div className={`grid transition-all duration-300 ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-        <div className="overflow-hidden">
-          <p className="px-3 sm:px-4 pb-3 sm:pb-4 text-xs text-gray-500 leading-relaxed">{answer}</p>
-        </div>
-      </div>
     </div>
   )
 }
@@ -110,14 +90,6 @@ const testimonials = [
   { quote: 'Working at Staff Book has been the most fulfilling experience of my career. The culture of innovation and mutual respect is unmatched.', name: 'Arun Kumar', role: 'Senior Frontend Developer' },
   { quote: 'The learning opportunities here are incredible. I have grown more in one year at Staff Book than in five years at my previous job.', name: 'Priya Sharma', role: 'Product Manager' },
   { quote: 'What I love most is the autonomy. Staff Book trusts you to do your best work, and the support system is amazing.', name: 'Rahul Verma', role: 'Backend Developer' },
-]
-
-const faqs = [
-  { question: 'What is the work culture like at Staff Book?', answer: 'Staff Book has a remote-first, collaborative culture built on trust, autonomy, and continuous learning. We value open communication, innovation, and work-life balance.' },
-  { question: 'Does Staff Book offer remote work options?', answer: 'Yes! We are a remote-first company with flexible working hours. Most roles can be performed from anywhere in India, with optional co-working spaces available.' },
-  { question: 'What is the hiring process like?', answer: 'Our hiring process typically takes 2-3 weeks and includes: application review, initial interview, technical assessment, and a final offer. We keep candidates informed at every stage.' },
-  { question: 'What benefits do employees get?', answer: 'We offer competitive salaries, health insurance, stock options, learning budgets, flexible work arrangements, wellness programs, and regular team events.' },
-  { question: 'How can I prepare for an interview at Staff Book?', answer: 'Review the job description thoroughly, understand our platform and mission, and be ready to discuss your past work and problem-solving approach. For technical roles, expect hands-on assessments.' },
 ]
 
 export default function CareersPage() {
@@ -505,31 +477,6 @@ export default function CareersPage() {
                     <p className="text-[10px] text-gray-500">{t.role}</p>
                   </div>
                 </div>
-              </FadeUp>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 9. FAQ */}
-      <section className="py-12 sm:py-16 bg-gradient-to-br from-purple-50/50 via-indigo-50/30 to-white">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100/80 text-purple-700 text-[10px] font-semibold uppercase tracking-wider mb-3">
-                <FiCode className="w-2.5 h-2.5" />
-                FAQs
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Frequently Asked Questions</h2>
-              <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
-                Everything you need to know about working at Staff Book.
-              </p>
-            </div>
-          </FadeUp>
-          <div className="space-y-2">
-            {faqs.map((faq, i) => (
-              <FadeUp key={i} delay={i * 40}>
-                <AccordionItem {...faq} />
               </FadeUp>
             ))}
           </div>
