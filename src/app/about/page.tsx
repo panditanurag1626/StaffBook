@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   FiZap, FiArrowRight, FiTarget, FiEye, FiUsers, FiBriefcase,
   FiSearch, FiMessageCircle, FiFileText, FiGlobe, FiLayers,
@@ -690,8 +689,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ===== 14. Premium Footer ===== */}
-     
     </div>
   )
 }

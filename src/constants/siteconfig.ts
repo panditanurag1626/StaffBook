@@ -211,7 +211,6 @@ export const SITE_CONFIG = {
       { label: 'Networking', href: '#' },
       { label: 'Connections', href: '#' },
       { label: 'Services', href: '/premium-services' },
-      { label: 'About', href: '/about' },
     ],
     signUp: 'Sign up',
   },
@@ -380,7 +379,6 @@ export const LOGGED_IN_LINKS = [
   },
   { label: 'My Connections', href: '/connections' },
   { label: 'Services', href: '/premium-services' },
-  { label: 'About', href: '/about' },
 ];
 
 export const PROFILE_PERFORMANCE_TITLE = 'Profile Performance';
