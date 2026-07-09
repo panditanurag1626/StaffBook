@@ -212,7 +212,6 @@ export const SITE_CONFIG = {
       { label: 'Networking', href: '#' },
       { label: 'Connections', href: '#' },
       { label: 'Services', href: '/premium-services' },
-      { label: 'Careers', href: '/careers' },
     ],
     signUp: 'Sign up',
   },
