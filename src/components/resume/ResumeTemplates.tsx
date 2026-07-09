@@ -1,0 +1,335 @@
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { resumeApiClient, templatePreviewUrl, printTemplate, downloadTemplatePdf } from '@/lib/api/resumeApi';
+import { THEME } from '../../styles/theme';
+import Card from '../shared/Card';
+import PremiumUpgradeModal from '../shared/PremiumUpgradeModal';
+import { FiStar, FiLoader, FiAlertCircle } from 'react-icons/fi';
+import { useAuth } from '@/context/AuthContext';
+
+interface Template {
+  id: number;
+  name: string;
+  description: string;
+  category: string;
+  is_premium: boolean;
+  preview_url: string;
+  render_url: string;
+  thumbnail: string;
+  color_scheme: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    text: string;
+  };
+  slug: string;
+  tags: string[];
+}
+
+const ResumeTemplates: React.FC = () => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const uploadId = searchParams.get('upload_id') || searchParams.get('resume_id'); // Fallback if needed
+  const templateIdParam = searchParams.get('template_id');
+
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const { user } = useAuth();
+  const TEMPLATES_PER_PAGE = 12;
+
+  const hasPremiumAccess = user?.user_balance_job_seeker?.premium_designs_available === 1 || (user?.userBalance?.no_of_resume ?? 0) > 0;
+
+  // Resolve a deep-linked template_id, even if it's not on the current page.
+  useEffect(() => {
+    if (!templateIdParam) return;
+    if (selectedTemplate?.id.toString() === templateIdParam) return;
+
+    const found = templates.find((t) => t.id.toString() === templateIdParam);
+    if (found) {
+      setSelectedTemplate(found);
+      return;
+    }
+    resumeApiClient
+      .get(`/api/templates/${templateIdParam}`)
+      .then((res) => {
+        if (res.data?.data) setSelectedTemplate(res.data.data);
+      })
+      .catch(() => { /* fall back to grid */ });
+  }, [templates, templateIdParam]);
+
+  const handleTemplateSelect = (template: Template) => {
+    if (template.is_premium && !hasPremiumAccess) {
+      setShowPremiumModal(true);
+      return;
+    }
+    if (!uploadId) {
+      router.push(`/profile/jobs?tab=resume&resumeTab=builder&template_id=${template.id}`);
+    } else {
+      setSelectedTemplate(template);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('template_id', template.id.toString());
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  };
+
+  const handlePreview = () => {
+    if (selectedTemplate && uploadId) {
+      window.open(templatePreviewUrl(selectedTemplate.id, uploadId), "_blank");
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!selectedTemplate || !uploadId) return;
+    const filename = `${selectedTemplate.name.replace(/\s+/g, '_')}_Resume.pdf`;
+    try {
+      // Real PDF from the server.
+      await downloadTemplatePdf(selectedTemplate.id, { upload_id: uploadId }, filename);
+    } catch (err) {
+      // No server PDF engine (501) or error — fall back to browser print-to-PDF.
+      console.error('Download error:', err);
+      try {
+        await printTemplate(selectedTemplate.id, { upload_id: uploadId });
+      } catch {
+        window.open(templatePreviewUrl(selectedTemplate.id, uploadId), '_blank');
+      }
+    }
+  };
+
+  const handleChangeTemplate = () => {
+    setSelectedTemplate(null);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('template_id');
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await resumeApiClient.get('/api/templates', {
+          params: { page: currentPage, limit: TEMPLATES_PER_PAGE },
+        });
+        const payload = response.data?.data;
+        if (payload && Array.isArray(payload.templates)) {
+          setTemplates(payload.templates);
+          setTotalCount(payload.total ?? payload.templates.length);
+          setTotalPages(payload.pages ?? 1);
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (err) {
+        console.error('Error fetching templates:', err);
+        setError('Failed to load templates. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTemplates();
+    // Refetch whenever the page changes (server-side pagination).
+  }, [currentPage]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <FiLoader className="text-purple-600 animate-spin" size={40} />
+        <p className="text-gray-500 font-medium">Loading templates...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4 text-center">
+        <FiAlertCircle className="text-red-500" size={40} />
+        <p className="text-gray-700 font-medium">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (selectedTemplate) {
+    return (
+      <div className={`space-y-6 ${THEME.layout.spacing.xl}`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className={THEME.components.typography.sectionTitle}>
+              Selected Template
+            </h2>
+            <p className={THEME.components.typography.body}>
+              {selectedTemplate.name}
+            </p>
+          </div>
+          <button
+            onClick={handleChangeTemplate}
+            className="px-4 py-2 text-sm font-medium text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
+          >
+            Change Template
+          </button>
+        </div>
+
+        <div className="flex flex-col items-center max-w-4xl mx-auto">
+          <Card className="w-full flex flex-col h-full" noPadding>
+            <div className="relative h-[500px] md:h-[600px] w-full overflow-hidden bg-gray-50 flex justify-center">
+              <div
+                className="origin-top"
+                style={{
+                  width: '1000px',
+                  height: '1414px',
+                  transform: 'scale(0.42)',
+                  flexShrink: 0
+                }}
+              >
+                <iframe
+                  src={templatePreviewUrl(selectedTemplate.id)}
+                  style={{ width: "100%", height: "100%", border: 0 }}
+                  title={`${selectedTemplate.name} Preview`}
+                  className="pointer-events-none"
+                  scrolling="no"
+                />
+              </div>
+
+              <PremiumUpgradeModal
+                isOpen={showPremiumModal}
+                onClose={() => setShowPremiumModal(false)}
+                title="Unlock Premium Templates"
+                description="Premium templates are available exclusively for Premium members. Upgrade to access professional designs that make your resume stand out."
+              />
+            </div>
+
+            {uploadId && (
+              <div className="p-6 border-t border-gray-100 flex flex-col sm:flex-row justify-center gap-4 bg-white">
+                <button
+                  onClick={handlePreview}
+                  className="px-6 py-3 bg-white border-2 border-purple-600 text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors"
+                >
+                  Preview with Data
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors shadow-sm"
+                >
+                  Download PDF
+                </button>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`space-y-6 ${THEME.layout.spacing.xl}`}>
+      <div className="flex items-center justify-end">
+        <div className="text-sm text-gray-500">
+          Total: {totalCount}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 items-stretch">
+        {templates.map((template) => (
+          <Card
+            key={template.id}
+            hoverEffect
+            className="group cursor-pointer overflow-hidden flex flex-col h-full"
+            noPadding
+            onClick={() => handleTemplateSelect(template)}
+          >
+            {/* Preview Section - Compact */}
+            <div className="relative h-[260px] w-full overflow-hidden bg-gray-50 border-b border-gray-100 flex justify-center">
+              <div
+                className="origin-top"
+                style={{
+                  width: '1000px',
+                  height: '1414px',
+                  transform: 'scale(0.22)',
+                  flexShrink: 0
+                }}
+              >
+                <iframe
+                  src={templatePreviewUrl(template.id)}
+                  style={{ width: "100%", height: "100%", border: 0 }}
+                  title={`${template.name} Preview`}
+                  className="pointer-events-none"
+                  scrolling="no"
+                />
+              </div>
+
+              {template.is_premium && (
+                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-bold text-yellow-600 shadow-lg flex items-center gap-1 z-10">
+                  <FiStar size={10} fill="currentColor" /> Premium
+                </div>
+              )}
+
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 pointer-events-none" />
+            </div>
+
+            <div className="p-3 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-900 group-hover:text-purple-600 transition-colors truncate">
+                {template.name}
+              </h3>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleTemplateSelect(template);
+                }}
+                className="flex-shrink-0 text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors"
+              >
+                Use
+              </button>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-6">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`w-9 h-9 text-sm font-medium rounded-lg transition-colors ${currentPage === page
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'text-gray-600 bg-white border border-gray-200 hover:bg-gray-50'
+                }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ResumeTemplates;
+
