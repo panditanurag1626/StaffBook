@@ -604,7 +604,17 @@ function FindCandidatesContent() {
   const [invitesStatusFilter, setInvitesStatusFilter] = useState('');
   const [invitesFromDate, setInvitesFromDate] = useState('');
   const [invitesToDate, setInvitesToDate] = useState('');
+  const [sentInvitesRefreshTrigger, setSentInvitesRefreshTrigger] = useState(0);
   const invitesPerPage = 10;
+
+  // Listen for global invite event to refresh the sent invites list
+  useEffect(() => {
+    const handleInviteSent = () => {
+      setSentInvitesRefreshTrigger(prev => prev + 1);
+    };
+    window.addEventListener('staffbook_candidateInvited', handleInviteSent);
+    return () => window.removeEventListener('staffbook_candidateInvited', handleInviteSent);
+  }, []);
 
   // Selected candidates for bulk CSV export
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
@@ -683,7 +693,7 @@ function FindCandidatesContent() {
       };
       fetchInvites();
     }
-  }, [activeTab, invitesPage, invitesStatusFilter, invitesFromDate, invitesToDate]);
+  }, [activeTab, invitesPage, invitesStatusFilter, invitesFromDate, invitesToDate, sentInvitesRefreshTrigger]);
 
   // ── Fetch all 3 sections when job changes ────────────────────────────────────
   const fetchSection = useCallback(async (

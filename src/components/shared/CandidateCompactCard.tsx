@@ -9,6 +9,7 @@ import { jobService } from '@/lib/api/services/jobService';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { notifyJobInvite } from '@/lib/firebaseNotifications';
 import PlatformActionButton from './PlatformActionButton';
 
 
@@ -101,6 +102,11 @@ export default function CandidateCompactCard({ candidate, onDownloadResume, jobP
 
       // Dispatch global invite sync event
       window.dispatchEvent(new CustomEvent('staffbook_candidateInvited', { detail: { candidateId: candidate.userId || candidate.id } }));
+
+      // Firebase notification
+      if (user?.id && candidate.userId && String(user.id) !== String(candidate.userId)) {
+        notifyJobInvite(candidate.userId, user.id, user.employerDetails?.company_name || `${user.first_name} ${user.last_name}`, user.picture || '', selectedId);
+      }
     } catch (err: any) {
       console.error('Send invite error:', err);
       let errMsg = 'Failed to send invite';
@@ -136,6 +142,11 @@ export default function CandidateCompactCard({ candidate, onDownloadResume, jobP
 
       // Dispatch global invite sync event
       window.dispatchEvent(new CustomEvent('staffbook_candidateInvited', { detail: { candidateId: candidate.userId || candidate.id } }));
+
+      // Firebase notification
+      if (user?.id && candidate.userId && String(user.id) !== String(candidate.userId)) {
+        notifyJobInvite(candidate.userId, user.id, user.employerDetails?.company_name || `${user.first_name} ${user.last_name}`, user.picture || '', jobPostId);
+      }
     } catch (err: any) {
       let errMsg = "Failed to send invite";
       if (err.response?.data?.data?.errors?.message?.[0]) {

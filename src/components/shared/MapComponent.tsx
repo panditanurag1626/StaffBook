@@ -14,6 +14,7 @@ import { getCurrentLocation } from "../../lib/utils";
 import { useAuth } from "../../context/AuthContext";
 import { jobService } from "../../lib/api/services/jobService";
 import toast from "react-hot-toast";
+import { notifyJobInvite } from "../../lib/firebaseNotifications";
 import { db } from "../../lib/firebase";
 import { ref as dbRef, onValue } from "firebase/database";
 
@@ -221,8 +222,23 @@ const MapComponent: React.FC<MapComponentProps> = ({
         try {
           await jobService.sendJobInvite(jobPostId, targetUserId);
           toast.success("Job invitation sent!");
+
+          // Dispatch global sync event so candidate cards update their status
+          window.dispatchEvent(new CustomEvent('staffbook_candidateInvited', { detail: { candidateId: targetUserId } }));
+
+          // Firebase notification
+          if (user?.id && String(user.id) !== String(targetUserId)) {
+            notifyJobInvite(targetUserId, user.id, user.employerDetails?.company_name || `${user.first_name} ${user.last_name}`, user.picture || '', jobPostId);
+          }
         } catch (err: any) {
-          toast.error(err.response?.data?.message || "Failed to send invite");
+          let errMsg = err.response?.data?.message || "Failed to send invite";
+          if (err.response?.data?.data?.errors?.message?.[0]) {
+            errMsg = err.response.data.data.errors.message[0];
+          }
+          if (errMsg.toLowerCase().includes('already applied') || errMsg.toLowerCase().includes('already exists') || errMsg.toLowerCase().includes('already invited')) {
+            errMsg = 'This user has already applied for this job.';
+          }
+          toast.error(errMsg);
         } finally {
           setLoadingAction(null);
         }
