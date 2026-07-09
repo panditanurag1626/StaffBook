@@ -51,7 +51,7 @@ export default function Services() {
     const fetchPlans = async () => {
       try {
         setLoading(true);
-        const userType = isEmployer ? 'employer' : 'job_seeker';
+        const userType = activeTab === 'recruiters' ? 'employer' : 'job_seeker';
         const response = await subscriptionService.getSubscriptionList(userType);
         if (response.data?.data?.data) {
           setPlansData(response.data.data.data);
@@ -63,7 +63,7 @@ export default function Services() {
       }
     };
     fetchPlans();
-  }, [isEmployer]);
+  }, [activeTab]);
 
   // ── Sync tab with URL ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -145,7 +145,7 @@ export default function Services() {
       if (result.success) {
         // 3. Confirm payment with our backend API
         try {
-          const userType = isEmployer ? 'employer' : 'job_seeker';
+          const userType = activeTab === 'recruiters' ? 'employer' : 'job_seeker';
 
           await subscriptionService.buySubscription({
             plan_id: plan.id,
@@ -294,12 +294,38 @@ export default function Services() {
           <section className="animate-fadeIn space-y-16">
             {plansData && plansData.length > 0 ? (
               <div>
+                {/* ── Tab Switcher ── */}
+                <div className="flex justify-center mb-8">
+                  <div className="inline-flex rounded-xl bg-gray-100 p-1.5 shadow-inner">
+                    <button
+                      onClick={() => setActiveTab('jobseekers')}
+                      className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+                        activeTab === 'jobseekers'
+                          ? 'bg-white text-purple-700 shadow-md'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      For Job Seekers
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('recruiters')}
+                      className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+                        activeTab === 'recruiters'
+                          ? 'bg-white text-purple-700 shadow-md'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      For Recruiters
+                    </button>
+                  </div>
+                </div>
+
                 <div className="text-center mb-10">
                   <h2 className={`${THEME.components.typography.sectionTitle} text-xl md:text-2xl mb-3`}>
-                    {isEmployer ? 'Choose Your Recruitment Plan' : 'Job Seeker Plans'}
+                    {activeTab === 'recruiters' ? 'Choose Your Recruitment Plan' : 'Job Seeker Plans'}
                   </h2>
                   <p className={`${THEME.components.typography.subheading} max-w-2xl mx-auto`}>
-                    {isEmployer
+                    {activeTab === 'recruiters'
                       ? 'Select a plan that matches your hiring needs and recruitment goals.'
                       : 'Find better opportunities faster with our tailored job seeker subscription plans.'}
                   </p>
