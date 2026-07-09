@@ -4,18 +4,16 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
-  FiUsers, FiBriefcase, FiSend, FiUserCheck, FiStar, FiShield,
-  FiHeart, FiTrendingUp, FiZap, FiEye, FiArrowRight, FiCheck,
-  FiChevronRight, FiPlay, FiAward, FiGlobe, FiLayers, FiCpu,
-  FiMessageCircle, FiSearch, FiTarget, FiCompass, FiCode,
-  FiBookOpen, FiHelpCircle, FiMapPin
+  FiZap, FiArrowRight, FiTarget, FiEye, FiUsers, FiBriefcase,
+  FiSearch, FiMessageCircle, FiFileText, FiGlobe, FiLayers,
+  FiCpu, FiHeart, FiStar, FiShield, FiTrendingUp, FiAward,
+  FiCheck, FiChevronRight, FiPlay, FiUserCheck, FiSend,
+  FiBookOpen, FiCompass, FiCode, FiHelpCircle, FiMapPin
 } from 'react-icons/fi'
-import { THEME } from '@/styles/theme'
 
 function useInView(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null)
   const [inView, setInView] = useState(false)
-
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -26,7 +24,6 @@ function useInView(threshold = 0.15) {
     observer.observe(el)
     return () => observer.disconnect()
   }, [threshold])
-
   return [ref, inView] as const
 }
 
@@ -69,9 +66,7 @@ function StatCard({ value, label, icon: Icon }: { value: string; label: string; 
         <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/20">
           <Icon className="w-6 h-6 text-white" />
         </div>
-        <div className="text-4xl sm:text-5xl font-bold text-gray-900 mb-1">
-          {count}{suffix}
-        </div>
+        <div className="text-4xl sm:text-5xl font-bold text-gray-900 mb-1">{count}{suffix}</div>
         <div className="text-sm text-gray-500 font-medium">{label}</div>
       </div>
     </div>
@@ -214,12 +209,12 @@ export default function AboutPage() {
   ]
 
   const team = [
-    { name: 'Amit Verma', role: 'Founder & CEO', image: '' },
-    { name: 'Neha Gupta', role: 'Chief Technology Officer', image: '' },
-    { name: 'Rohan Desai', role: 'VP of Product', image: '' },
-    { name: 'Sneha Reddy', role: 'Head of Design', image: '' },
-    { name: 'Arjun Nair', role: 'Chief Marketing Officer', image: '' },
-    { name: 'Priya Mehta', role: 'Head of Operations', image: '' },
+    { name: 'Amit Verma', role: 'Founder & CEO' },
+    { name: 'Neha Gupta', role: 'Chief Technology Officer' },
+    { name: 'Rohan Desai', role: 'VP of Product' },
+    { name: 'Sneha Reddy', role: 'Head of Design' },
+    { name: 'Arjun Nair', role: 'Chief Marketing Officer' },
+    { name: 'Priya Mehta', role: 'Head of Operations' },
   ]
 
   return (
@@ -255,7 +250,7 @@ export default function AboutPage() {
                   <FiArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
-                  href="/about#how-it-works"
+                  href="#how-it-works"
                   className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold text-gray-700 bg-white border border-gray-200 hover:border-purple-200 hover:shadow-lg hover:text-purple-700 transition-all duration-300"
                 >
                   <FiPlay className="w-4 h-4" />
@@ -284,14 +279,14 @@ export default function AboutPage() {
                   </span>
                 </h2>
                 <p className="mt-4 text-base sm:text-lg text-gray-500 leading-relaxed">
-                  At Staff Book, we are on a mission to democratize access to career opportunities and 
-                  transform how people connect with their dream jobs. We believe that finding the right 
-                  job should not be a challenge — it should be a journey of discovery powered by 
+                  At Staff Book, we are on a mission to democratize access to career opportunities and
+                  transform how people connect with their dream jobs. We believe that finding the right
+                  job should not be a challenge — it should be a journey of discovery powered by
                   intelligence, empathy, and innovation.
                 </p>
                 <p className="mt-4 text-base sm:text-lg text-gray-500 leading-relaxed">
-                  We leverage cutting-edge AI technology to bridge the gap between talented professionals 
-                  and forward-thinking employers, creating a seamless ecosystem where careers flourish 
+                  We leverage cutting-edge AI technology to bridge the gap between talented professionals
+                  and forward-thinking employers, creating a seamless ecosystem where careers flourish
                   and businesses thrive.
                 </p>
               </div>
@@ -344,8 +339,8 @@ export default function AboutPage() {
                     <h3 className="text-lg font-bold text-gray-900">Our North Star</h3>
                   </div>
                   <p className="text-base text-gray-600 leading-relaxed italic">
-                    &ldquo;To become the world&apos;s most trusted AI-powered career ecosystem, where every 
-                    professional finds their true potential and every organization discovers their 
+                    &ldquo;To become the world&apos;s most trusted AI-powered career ecosystem, where every
+                    professional finds their true potential and every organization discovers their
                     perfect talent match.&rdquo;
                   </p>
                 </div>
@@ -364,13 +359,13 @@ export default function AboutPage() {
                   </span>
                 </h2>
                 <p className="mt-4 text-base sm:text-lg text-gray-500 leading-relaxed">
-                  We envision a world where geographical boundaries and traditional hiring barriers no longer 
-                  limit professional growth. A future where AI empowers every individual to find work that 
+                  We envision a world where geographical boundaries and traditional hiring barriers no longer
+                  limit professional growth. A future where AI empowers every individual to find work that
                   aligns with their skills, passions, and lifestyle.
                 </p>
                 <p className="mt-4 text-base sm:text-lg text-gray-500 leading-relaxed">
-                  Our vision extends beyond job matching — we are building a comprehensive professional 
-                  ecosystem that nurtures careers from the first resume to executive leadership, 
+                  Our vision extends beyond job matching — we are building a comprehensive professional
+                  ecosystem that nurtures careers from the first resume to executive leadership,
                   fostering lifelong learning, networking, and growth.
                 </p>
               </div>
@@ -429,14 +424,14 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ===== 5. Why Staff Book ===== */}
+      {/* ===== 5. Why Choose Staff Book ===== */}
       <section className="py-16 sm:py-24 bg-gradient-to-br from-purple-50/50 via-indigo-50/30 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeUp>
             <div className="text-center mb-16">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100/80 text-purple-700 text-xs font-semibold uppercase tracking-wider mb-4">
                 <FiStar className="w-3 h-3" />
-                Why Staff Book
+                Why Choose Staff Book
               </div>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Built Different. Built Better.</h2>
               <p className="mt-4 text-gray-500 max-w-2xl mx-auto">
@@ -513,14 +508,14 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ===== 8. Features Showcase ===== */}
+      {/* ===== 8. Platform Features ===== */}
       <section className="py-16 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeUp>
             <div className="text-center mb-16">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100/80 text-purple-700 text-xs font-semibold uppercase tracking-wider mb-4">
                 <FiLayers className="w-3 h-3" />
-                Features Showcase
+                Platform Features
               </div>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Everything You Need to Succeed</h2>
               <p className="mt-4 text-gray-500 max-w-2xl mx-auto">
@@ -544,7 +539,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ===== 9. How Staff Book Works ===== */}
+      {/* ===== 9. How It Works ===== */}
       <section id="how-it-works" className="py-16 sm:py-24 bg-gradient-to-br from-purple-50/50 via-indigo-50/30 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeUp>
@@ -579,69 +574,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ===== 10. Why Companies Choose Staff Book ===== */}
-      <section className="py-16 sm:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100/80 text-purple-700 text-xs font-semibold uppercase tracking-wider mb-4">
-                <FiBriefcase className="w-3 h-3" />
-                For Employers
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Why Companies Choose Staff Book</h2>
-              <p className="mt-4 text-gray-500 max-w-2xl mx-auto">
-                Thousands of employers trust Staff Book to find their next great hire.
-              </p>
-            </div>
-          </FadeUp>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {whyCompanies.map((item, i) => (
-              <FadeUp key={i} delay={i * 100}>
-                <div className="bg-white border border-purple-100/50 rounded-2xl p-6 hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 hover:-translate-y-1 h-full text-center">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/20">
-                    <item.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{item.description}</p>
-                </div>
-              </FadeUp>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 11. Why Job Seekers Love Staff Book ===== */}
-      <section className="py-16 sm:py-24 bg-gradient-to-br from-purple-50/50 via-indigo-50/30 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100/80 text-purple-700 text-xs font-semibold uppercase tracking-wider mb-4">
-                <FiUsers className="w-3 h-3" />
-                For Job Seekers
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Why Job Seekers Love Staff Book</h2>
-              <p className="mt-4 text-gray-500 max-w-2xl mx-auto">
-                Join millions of professionals who have transformed their careers with Staff Book.
-              </p>
-            </div>
-          </FadeUp>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {whyJobSeekers.map((item, i) => (
-              <FadeUp key={i} delay={i * 100}>
-                <div className="bg-white border border-purple-100/50 rounded-2xl p-6 hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 hover:-translate-y-1 h-full text-center">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/20">
-                    <item.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{item.description}</p>
-                </div>
-              </FadeUp>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 12. Leadership / Team Section ===== */}
+      {/* ===== 10. Team Section ===== */}
       <section className="py-16 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeUp>
@@ -674,7 +607,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ===== 13. Testimonials ===== */}
+      {/* ===== 11. Testimonials ===== */}
       <section className="py-16 sm:py-24 bg-gradient-to-br from-purple-50/50 via-indigo-50/30 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeUp>
@@ -697,7 +630,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ===== 14. Frequently Asked Questions ===== */}
+      {/* ===== 12. FAQ ===== */}
       <section className="py-16 sm:py-24">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeUp>
@@ -722,7 +655,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ===== 15. Call To Action ===== */}
+      {/* ===== 13. CTA ===== */}
       <section className="py-16 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeUp>
@@ -757,7 +690,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ===== 16. Premium Footer ===== */}
+      {/* ===== 14. Premium Footer ===== */}
       <footer className="bg-gray-900 text-gray-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
@@ -786,15 +719,12 @@ export default function AboutPage() {
               <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Company</h4>
               <ul className="space-y-3">
                 {[
-                  { label: 'About', href: '/about' },
-                  { label: 'Careers', href: '/careers' },
                   { label: 'Services', href: '/premium-services' },
                   { label: 'FAQs', href: '/faqs' },
+                  { label: 'About', href: '/about' },
                 ].map((item) => (
                   <li key={item.label}>
-                    <Link href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">
-                      {item.label}
-                    </Link>
+                    <Link href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">{item.label}</Link>
                   </li>
                 ))}
               </ul>
@@ -809,9 +739,7 @@ export default function AboutPage() {
                   { label: 'Fraud Alert', href: '/fraud-alert' },
                 ].map((item) => (
                   <li key={item.label}>
-                    <Link href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">
-                      {item.label}
-                    </Link>
+                    <Link href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">{item.label}</Link>
                   </li>
                 ))}
               </ul>
@@ -821,23 +749,17 @@ export default function AboutPage() {
               <ul className="space-y-3">
                 <li>
                   <span className="text-xs text-gray-500 uppercase tracking-wider block mb-1">Email</span>
-                  <a href="mailto:info@staffbook.in" className="text-sm text-gray-400 hover:text-white transition-colors">
-                    info@staffbook.in
-                  </a>
+                  <a href="mailto:info@staffbook.in" className="text-sm text-gray-400 hover:text-white transition-colors">info@staffbook.in</a>
                 </li>
                 <li>
                   <span className="text-xs text-gray-500 uppercase tracking-wider block mb-1">Phone</span>
-                  <a href="tel:+919009222192" className="text-sm text-gray-400 hover:text-white transition-colors">
-                    +91 9009222192
-                  </a>
+                  <a href="tel:+919009222192" className="text-sm text-gray-400 hover:text-white transition-colors">+91 9009222192</a>
                 </li>
               </ul>
             </div>
           </div>
           <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-gray-500">
-              &copy; {new Date().getFullYear()} Staff Book. All Rights Reserved.
-            </p>
+            <p className="text-xs text-gray-500">&copy; {new Date().getFullYear()} Staff Book. All Rights Reserved.</p>
             <div className="flex gap-6">
               <Link href="/terms" className="text-xs text-gray-500 hover:text-white transition-colors">Terms</Link>
               <Link href="/privacy" className="text-xs text-gray-500 hover:text-white transition-colors">Privacy</Link>

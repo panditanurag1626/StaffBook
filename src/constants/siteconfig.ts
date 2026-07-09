@@ -192,7 +192,6 @@ export const SITE_CONFIG = {
     ],
     menu: [
       { label: 'About', href: '/about' },
-      { label: 'Careers', href: '/careers' },
       { label: 'Services', href: '/premium-services' },
       { label: 'FAQs', href: '/faqs' },
     ],
@@ -213,7 +212,6 @@ export const SITE_CONFIG = {
       { label: 'Connections', href: '#' },
       { label: 'Services', href: '/premium-services' },
       { label: 'About', href: '/about' },
-      { label: 'Careers', href: '/careers' },
     ],
     signUp: 'Sign up',
   },
@@ -383,7 +381,6 @@ export const LOGGED_IN_LINKS = [
   { label: 'My Connections', href: '/connections' },
   { label: 'Services', href: '/premium-services' },
   { label: 'About', href: '/about' },
-  { label: 'Careers', href: '/careers' },
 ];
 
 export const PROFILE_PERFORMANCE_TITLE = 'Profile Performance';
