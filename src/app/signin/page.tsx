@@ -95,8 +95,9 @@ function SigninContent() {
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
 
-            // Use the stable Firebase Auth UID (never changes) instead of the ID token (changes every login)
-            const firebaseUid = user.uid;
+            // This is the user's ID Token, often used as the "auth code" to send to backends
+            const idToken = await user.getIdToken();
+            setAuthCode(idToken);
 
             console.log('Google Auth Result:', user);
 
@@ -108,7 +109,7 @@ function SigninContent() {
 
             const socialPayload = {
                 social_type: 'google',
-                social_id: firebaseUid, // Uses stable Firebase UID, not the short-lived ID token
+                social_id: idToken, // As per user request, use the ID token here
                 email: user.email || '',
                 first_name: firstName,
                 last_name: lastName,
@@ -128,11 +129,7 @@ function SigninContent() {
 
         } catch (err: any) {
             console.error('Google Login Error:', err);
-            if (err.code === 'auth/unauthorized-domain' || err.code === 'auth/operation-not-allowed') {
-                setError('Google sign-in is not configured for this domain. Please contact support.');
-            } else {
-                setError(err.message || 'Google login failed');
-            }
+            setError(err.message || 'Google login failed');
         }
     };
 

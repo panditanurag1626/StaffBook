@@ -288,13 +288,6 @@ function SignupContent() {
       return;
     }
 
-    // Validate phone number (10-digit Indian mobile)
-    const phoneDigits = formData.phone.replace(/\D/g, '');
-    if (phoneDigits.length !== 10) {
-      setError('Please enter a valid 10-digit mobile number');
-      return;
-    }
-
     // Employer Validation
     if (userType === 'employer') {
       if (!formData.companyName || !formData.designation) {
