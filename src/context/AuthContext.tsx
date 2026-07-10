@@ -260,7 +260,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await loginUser(email, password);
 
-      if (response.status === 200 && response.data.user) {
+      if ((response.status === 200 || response.status === true || response.status === 1) && response.data.user) {
         // Handle unverified GST for employer
         const gstVerified = (response as any).data?.gst_verified;
         const msg = (response as any).message?.toLowerCase() || (response as any).data?.message?.toLowerCase() || '';
@@ -320,7 +320,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await loginSocial(data);
 
-      if (response.status === 200 && response.data.user) {
+      if ((response.status === 200 || response.status === true || response.status === 1) && response.data.user) {
         setUser(response.data.user);
 
         // Fetch full profile data and completion percentage after social login
@@ -360,13 +360,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         document: data.document,
       });
 
-      if (response.status === 200 && response.data.token) {
+      if ((response.status === 200 || response.status === true || response.status === 1) && response.data.token) {
         return { success: true, data: response.data };
       }
 
       let errorMsg = response.message;
       if (response.data?.errors) {
         const errors = response.data.errors;
+        const firstErrorKey = Object.keys(errors)[0];
+        if (firstErrorKey && Array.isArray(errors[firstErrorKey])) {
+          errorMsg = errors[firstErrorKey][0];
+        }
+      } else if ((response as any).errors) {
+        const errors = (response as any).errors;
         const firstErrorKey = Object.keys(errors)[0];
         if (firstErrorKey && Array.isArray(errors[firstErrorKey])) {
           errorMsg = errors[firstErrorKey][0];
