@@ -186,23 +186,15 @@ export default function UserProfilePage() {
       setProfile(data);
       setUserData(data);
       setUserName(data?.first_name ? `${data.first_name} ${data.last_name || ''}`.trim() : data?.username || 'User');
+      setTotalPosts(data?.totalActivePost ?? 0);
+      setConnectionCount(data?.totalConnection ?? 0);
 
       try {
         const postsRes = await postService.getUserPosts(Number(userId));
-        const posts = postsRes?.data?.data ?? postsRes?.data ?? [];
-        setTotalPosts(Array.isArray(posts) ? posts.length : 0);
+        const posts = postsRes?.data?.data?.post?.items ?? postsRes?.data?.data ?? postsRes?.data ?? [];
         setUserPosts(Array.isArray(posts) ? posts : []);
       } catch {
-        setTotalPosts(0);
         setUserPosts([]);
-      }
-
-      try {
-        const connRes = await connectionService.getOtherConnections(Number(userId));
-        const conns = connRes?.data?.data ?? [];
-        setConnectionCount(Array.isArray(conns) ? conns.length : 0);
-      } catch {
-        setConnectionCount(0);
       }
     } catch (err) {
       console.error("Failed to load user profile:", err);
@@ -233,7 +225,7 @@ export default function UserProfilePage() {
       setPostsLoading(true);
       try {
         const postsRes = await postService.getUserPosts(Number(userId));
-        const posts = postsRes?.data?.data ?? postsRes?.data ?? [];
+        const posts = postsRes?.data?.data?.post?.items ?? postsRes?.data?.data ?? postsRes?.data ?? [];
         setUserPosts(Array.isArray(posts) ? posts : []);
       } catch {
         setUserPosts([]);
