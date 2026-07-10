@@ -126,6 +126,14 @@ const Navbar = () => {
                       Sign Up
                     </Link>
                   )}
+                  {!user && path === '/signup' && (
+                    <Link
+                      href="/signin"
+                      className="font-semibold px-4 py-1.5 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl text-white bg-purple-700 hover:bg-purple-800 text-xs whitespace-nowrap"
+                    >
+                      Sign In
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
