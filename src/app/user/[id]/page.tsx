@@ -32,8 +32,13 @@ function UserReels({ userId, userName }: { userId: string; userName: string }) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const reelsRes = await getReelsList(1);
-        const allReels = reelsRes.data?.reels ?? [];
+        const allReels: Reel[] = [];
+        for (let page = 1; page <= 50; page++) {
+          const reelsRes = await getReelsList(page);
+          const pageReels = reelsRes.data?.reels ?? [];
+          if (pageReels.length === 0) break;
+          allReels.push(...pageReels);
+        }
         const userReels = allReels.filter((r: Reel) => String(r.user_id) === String(userId));
         setReels(userReels);
       } catch {
@@ -136,6 +141,14 @@ function ConnectionsList({ userId }: { userId: string }) {
     </div>
   );
 }
+
+const sanitizeUrl = (url: string) => {
+  if (!url) return "";
+  if (url.includes("http") && url.lastIndexOf("http") > 0) {
+    return url.substring(url.lastIndexOf("http"));
+  }
+  return url;
+};
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -251,8 +264,8 @@ export default function UserProfilePage() {
             {/* Profile Card */}
             <Card className="p-6 text-center">
               <div className="w-20 h-20 mx-auto rounded-full overflow-hidden bg-gray-200 mb-3">
-                {profile?.image || profile?.picture ? (
-                  <img src={profile?.image || profile?.picture || '/images/user_profile_placeholder.jpeg'} alt={userName} className="w-full h-full object-cover" />
+                {profile?.picture || profile?.image ? (
+                  <img src={sanitizeUrl(profile?.picture || profile?.image) || '/images/user_profile_placeholder.jpeg'} alt={userName} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/user_profile_placeholder.jpeg'; }} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     <FiUser size={32} />
