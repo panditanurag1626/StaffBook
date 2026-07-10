@@ -16,7 +16,7 @@ const testimonials = [
         role: "Senior Accountant",
         type: "Job Seeker",
         text: "I found several relevant jobs within 2 km of my home. StaffBook helped me choose a role without compromising on work-life balance.",
-        image: "https://images.unsplash.com/photo-1583156340156-f60be34769c3?q=80&w=1000&auto=format&fit=crop"
+        image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=1000&auto=format&fit=crop"
     },
     {
         name: "Rohit Verma",

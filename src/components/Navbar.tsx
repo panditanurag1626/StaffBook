@@ -197,20 +197,12 @@ const Navbar = () => {
               </>
             )}
             {!user && path !== '/signin' && path !== '/signup' && (
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/signup"
-                  className="font-semibold px-4 py-2 rounded-full transition-all duration-300 text-purple-700 border border-purple-700 hover:bg-purple-50 text-sm"
-                >
-                  Sign Up
-                </Link>
-                <Link
-                  href="/signin"
-                  className="font-semibold px-5 py-2 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl text-white bg-purple-700 hover:bg-purple-800 text-sm"
-                >
-                  Sign In
-                </Link>
-              </div>
+              <Link
+                href="/signin"
+                className="font-semibold px-5 py-2 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl text-white bg-purple-700 hover:bg-purple-800 text-sm"
+              >
+                Sign In
+              </Link>
             )}
           </div>
         </div>

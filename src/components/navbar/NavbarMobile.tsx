@@ -252,13 +252,6 @@ const NavbarMobile = ({
           ) : (
             <div className="space-y-2 pt-2 border-t border-gray-100">
               <Link
-                href="/signup"
-                onClick={onClose}
-                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl text-purple-700 border-2 border-purple-600 hover:bg-purple-50 transition-all font-medium"
-              >
-                Sign Up
-              </Link>
-              <Link
                 href="/signin"
                 onClick={onClose}
                 className="w-full flex items-center justify-center gap-2 p-3 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-lg transition-all font-medium"
