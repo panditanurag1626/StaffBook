@@ -153,8 +153,10 @@ export default function BannerContent() {
       const formData = new FormData();
       if (editingBanner) {
         formData.append('id', editingBanner.id.toString());
+      } else {
+        formData.append('status', '10');
       }
-      formData.append('title', form.title);
+      formData.append('name', form.title);
       formData.append('target_url', form.target_url);
       formData.append('latitude', form.latitude);
       formData.append('longitude', form.longitude);
@@ -171,7 +173,7 @@ export default function BannerContent() {
         response = await bannerService.createBanner(formData);
       }
 
-      if (response && (response.status === 200 || response.status === 201)) {
+      if (response && (response.status === 200 || response.status === 201 || response.status === 1 || response.message?.toLowerCase().includes('success'))) {
         toast.success(editingBanner ? 'Banner updated successfully' : 'Banner created successfully');
         handleCloseModal();
         fetchBanners();
@@ -197,7 +199,7 @@ export default function BannerContent() {
     try {
       setIsDeleting(true);
       const response = await bannerService.deleteBanner(bannerToDelete);
-      if (response && (response.status === 200 || response.status === 201)) {
+      if (response && (response.status === 200 || response.status === 201 || response.status === 1 || response.message?.toLowerCase().includes('success'))) {
         toast.success('Banner deleted successfully');
         setShowDeleteModal(false);
         setBannerToDelete(null);
@@ -216,7 +218,7 @@ export default function BannerContent() {
     const newStatus = currentStatus === 10 ? 'Deactivate' : 'Activate';
     try {
       const response = await bannerService.toggleBannerStatus(id, newStatus);
-      if (response && (response.status === 200 || response.status === 201)) {
+      if (response && (response.status === 200 || response.status === 201 || response.status === 1 || response.message?.toLowerCase().includes('success'))) {
         toast.success(`Banner ${newStatus.toLowerCase()}d successfully`);
         fetchBanners();
       } else {

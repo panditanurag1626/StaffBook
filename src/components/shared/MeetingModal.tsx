@@ -520,7 +520,7 @@ const MeetingModal: React.FC<MeetingModalProps> = ({
           {activeTab === 'schedule' && (
             <div className="space-y-3">
               <h3 className="font-black text-gray-900 uppercase tracking-widest text-xs mb-4">
-                {mode === 'employer' ? 'Schedule with Candidates' : 'Schedule with Employer'}
+                Schedule a Meeting
               </h3>
               <input
                 type="text"
@@ -531,7 +531,7 @@ const MeetingModal: React.FC<MeetingModalProps> = ({
               />
               <input
                 type="text"
-                placeholder={mode === 'employer' ? "Candidate Name" : "Employer Name"}
+                placeholder="Participant Name"
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 text-gray-900 placeholder-gray-400"
                 value={newMeeting.candidateName}
                 onChange={e => setNewMeeting({ ...newMeeting, candidateName: e.target.value })}
