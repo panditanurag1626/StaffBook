@@ -102,7 +102,7 @@ const Navbar = () => {
                 </Link>
               </div>
               {path !== '/' && (
-                <div className="lg:hidden flex items-center z-50">
+                <div className="lg:hidden flex items-center z-50 gap-2">
                   <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     className="relative rounded-full shadow-sm hover:bg-gray-50 transition-all active:scale-95 border border-gray-100"
@@ -118,6 +118,14 @@ const Navbar = () => {
                       />
                     </div>
                   </button>
+                  {!user && path === '/signin' && (
+                    <Link
+                      href="/signup"
+                      className="font-semibold px-4 py-1.5 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl text-white bg-purple-700 hover:bg-purple-800 text-xs whitespace-nowrap"
+                    >
+                      Sign Up
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
