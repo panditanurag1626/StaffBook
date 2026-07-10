@@ -655,7 +655,8 @@ function FindCandidatesContent() {
         try {
           // "viewed" isn't supported as an API filter, so fetch all and filter client-side
           const apiStatus = invitesStatusFilter === 'viewed' ? '' : invitesStatusFilter;
-          const res = await jobService.getMySentInvites(apiStatus, invitesPage, invitesFromDate || undefined, invitesToDate || undefined);
+          const perPage = invitesStatusFilter === 'viewed' ? 100 : invitesPerPage;
+          const res = await jobService.getMySentInvites(apiStatus, invitesPage, invitesFromDate || undefined, invitesToDate || undefined, perPage);
           const data = res?.data?.data?.data || [];
           setInvitesTotalPages(res?.data?.data?.pagination?.page_count || 1);
           setInvitesTotalCount(res?.data?.data?.pagination?.total_count || 0);
@@ -671,12 +672,12 @@ function FindCandidatesContent() {
             image: inv.candidate?.picture || '/images/user_profile_placeholder.jpeg',
             isOnline: inv.candidate?.online === 1,
             connectionStatus: inv.candidate?.connection_status || 'not_connected',
-            is_viewed: inv.is_viewed,
+            is_viewed: !!(inv.is_viewed || inv.invite?.is_viewed || inv.candidate?.invite?.is_viewed || inv.formatted_viewed_at),
             jobPostId: inv.job?.id || null,
             resumeUrl: inv.candidate?.resumeUpload?.url || null,
             timeline: [
               { label: 'Job Invitation Sent', date: inv.formatted_created_at, status: 'completed' },
-              { label: 'Viewed', date: inv.formatted_viewed_at || 'Pending', status: inv.is_viewed ? 'completed' : 'pending' },
+              { label: 'Viewed', date: inv.formatted_viewed_at || 'Pending', status: inv.is_viewed || inv.invite?.is_viewed || inv.candidate?.invite?.is_viewed || inv.formatted_viewed_at ? 'completed' : 'pending' },
               { label: 'Responded', date: inv.formatted_responded_at || 'Pending', status: inv.status !== 'pending' ? 'completed' : 'pending' },
             ]
           }));

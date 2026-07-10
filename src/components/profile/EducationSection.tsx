@@ -248,13 +248,17 @@ export default function EducationSection({ readOnly = false, educations: apiEduc
                   <span className="font-medium">{edu.institution}</span>
                 </>
               )}
-              {edu.grade && String(edu.grade) !== 'null' && (
-                <>
-                  <span className="text-gray-300">•</span>
-                  <div className="text-base font-bold text-green-600 whitespace-nowrap">{edu.grade}</div>
-                </>
-              )}
             </div>
+            
+            {edu.grade && String(edu.grade) !== 'null' && (
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-lg shadow-sm">
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Grade:</span>
+                  <span className="text-sm font-black text-amber-800">{edu.grade}</span>
+                </div>
+              </div>
+            )}
             
             {(durationText || (edu.courseType && String(edu.courseType) !== 'null')) && (
               <div className={`flex flex-wrap items-center gap-2 ${THEME.components.typography.meta} mb-2`}>

@@ -721,11 +721,12 @@ export const jobService = {
      * @param fromDate - Optional from date (YYYY-MM-DD)
      * @param toDate - Optional to date (YYYY-MM-DD)
      */
-    getMySentInvites: async (status = 'pending', page = 1, fromDate?: string, toDate?: string): Promise<ApiResponse<any>> => {
+    getMySentInvites: async (status = 'pending', page = 1, fromDate?: string, toDate?: string, perPage?: number): Promise<ApiResponse<any>> => {
         let url = `job-post/my-sent-invites?page=${page}`;
         if (status) url += `&status=${status}`;
         if (fromDate) url += `&from_date=${fromDate}`;
         if (toDate) url += `&to_date=${toDate}`;
+        if (perPage) url += `&per-page=${perPage}`;
 
         const response = await apiClient.get<ApiResponse<any>>(url);
         return response.data;
