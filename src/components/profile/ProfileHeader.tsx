@@ -334,7 +334,19 @@ export default function ProfileHeader({ readOnly = false, userData, profileData 
 
   // Get user data with defaults
   const displayName = displayUser ? `${displayUser.first_name} ${displayUser.last_name}` : "Guest User";
-  const displayAvatar = sanitizeUrl(displayUser?.picture || "/images/user_profile_placeholder.jpeg");
+  const getAvatarUrl = () => {
+    const raw = displayUser?.picture || displayUser?.image || '';
+    if (!raw) return "/images/user_profile_placeholder.jpeg";
+    let clean = raw;
+    if (clean.includes('http') && clean.lastIndexOf('http') > 0) {
+      clean = clean.substring(clean.lastIndexOf('http'));
+    }
+    if (clean.startsWith('/') && !clean.startsWith('/images/') && !clean.startsWith('/_next/') && !clean.startsWith('/fonts/')) {
+      return `https://admin.staffbook.in${clean}`;
+    }
+    return clean;
+  };
+  const displayAvatar = getAvatarUrl();
   const displayCover = sanitizeUrl(displayUser?.backpicture || "/images/user_bg_placeholder.jpeg"); // Fallback cover
   const displayDesignation = displayUser?.designation || "Not specified";
 
@@ -391,7 +403,7 @@ export default function ProfileHeader({ readOnly = false, userData, profileData 
               >
                 {/* Avatar Image */}
                 <div className="absolute inset-0 rounded-full overflow-hidden z-10">
-                  {displayUser?.picture ? (
+                  {displayUser?.picture || displayUser?.image ? (
                     <Image src={displayAvatar} alt={displayName} fill sizes="(max-width: 768px) 100px, 120px" className="object-cover" />
                   ) : (
                     <div className={`w-full h-full bg-gradient-to-br ${THEME.colors.gradient.sky} flex items-center justify-center text-white font-bold text-4xl`}>
