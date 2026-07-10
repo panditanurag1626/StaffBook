@@ -32,14 +32,18 @@ function UserReels({ userId, userName }: { userId: string; userName: string }) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const allReels: Reel[] = [];
-        for (let page = 1; page <= 50; page++) {
-          const reelsRes = await getReelsList(page);
-          const pageReels = reelsRes.data?.reels ?? [];
-          if (pageReels.length === 0) break;
-          allReels.push(...pageReels);
+        const reelsRes = await getReelsList(1, Number(userId));
+        let userReels = reelsRes.data?.reels ?? [];
+        if (userReels.length === 0) {
+          const allReels: Reel[] = [];
+          for (let page = 1; page <= 50; page++) {
+            const pageRes = await getReelsList(page);
+            const pageReels = pageRes.data?.reels ?? [];
+            if (pageReels.length === 0) break;
+            allReels.push(...pageReels);
+          }
+          userReels = allReels.filter((r: Reel) => String(r.user_id) === String(userId));
         }
-        const userReels = allReels.filter((r: Reel) => String(r.user_id) === String(userId));
         setReels(userReels);
       } catch {
         setReels([]);
@@ -71,8 +75,8 @@ function UserReels({ userId, userName }: { userId: string; userName: string }) {
       <div className="grid grid-cols-2 gap-2">
         {reels.slice(0, 4).map((reel) => (
           <div key={reel.id} className="group cursor-pointer relative aspect-[9/16] rounded-lg overflow-hidden bg-gray-100">
-            {reel.thumbnailUrl ? (
-              <img src={reel.thumbnailUrl} alt={reel.title} className="w-full h-full object-cover" />
+                {reel.thumbnailUrl ? (
+              <img src={resolveImageUrl(reel.thumbnailUrl, '')} alt={reel.title} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
                 <FiPlay size={20} className="text-white" />
@@ -128,7 +132,7 @@ function ConnectionsList({ userId }: { userId: string }) {
           onClick={() => window.location.href = `/user/${conn.id}`}
         >
           <img
-            src={conn.avatar || '/images/user_profile_placeholder.jpeg'}
+            src={resolveImageUrl(conn.avatar, '/images/user_profile_placeholder.jpeg')}
             alt={conn.name}
             className="w-10 h-10 rounded-full object-cover"
           />
@@ -142,12 +146,18 @@ function ConnectionsList({ userId }: { userId: string }) {
   );
 }
 
-const sanitizeUrl = (url: string) => {
-  if (!url) return "";
-  if (url.includes("http") && url.lastIndexOf("http") > 0) {
-    return url.substring(url.lastIndexOf("http"));
+const BACKEND_ORIGIN = 'https://admin.staffbook.in';
+
+const resolveImageUrl = (url: string | null | undefined, fallback: string): string => {
+  if (!url) return fallback;
+  let clean = url;
+  if (clean.includes("http") && clean.lastIndexOf("http") > 0) {
+    clean = clean.substring(clean.lastIndexOf("http"));
   }
-  return url;
+  if (clean.startsWith("/") && !clean.startsWith("/images/") && !clean.startsWith("/_next/") && !clean.startsWith("/fonts/")) {
+    return `${BACKEND_ORIGIN}${clean}`;
+  }
+  return clean;
 };
 
 export default function UserProfilePage() {
@@ -265,7 +275,7 @@ export default function UserProfilePage() {
             <Card className="p-6 text-center">
               <div className="w-20 h-20 mx-auto rounded-full overflow-hidden bg-gray-200 mb-3">
                 {profile?.picture || profile?.image ? (
-                  <img src={sanitizeUrl(profile?.picture || profile?.image) || '/images/user_profile_placeholder.jpeg'} alt={userName} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/user_profile_placeholder.jpeg'; }} />
+                  <img src={resolveImageUrl(profile?.picture || profile?.image, '/images/user_profile_placeholder.jpeg')} alt={userName} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/user_profile_placeholder.jpeg'; }} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     <FiUser size={32} />

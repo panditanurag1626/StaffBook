@@ -115,9 +115,12 @@ export const uploadReel = async (
 // Get list of all reels
 export const getReelsList = async (
   page: number = 1,
+  userId?: number,
 ): Promise<ReelsListResponse> => {
   try {
-    const response = await apiClient.get(`reel/list?page=${page}`);
+    let url = `reel/list?page=${page}`;
+    if (userId) url += `&user_id=${userId}`;
+    const response = await apiClient.get(url);
     return response.data;
   } catch (error: any) {
     console.error("Get reels list error:", error);

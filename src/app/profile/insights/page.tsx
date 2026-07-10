@@ -42,7 +42,7 @@ function RecruiterInsightsContent() {
     const fetchAnalyticsData = async () => {
       try {
         const response = await userService.getProfileAnalytics();
-        setAnalyticsData(response.data.data);
+        setAnalyticsData(response.data);
       } catch (error) {
         console.error('Error fetching analytics data:', error);
       }
