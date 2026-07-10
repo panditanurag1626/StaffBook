@@ -21,41 +21,56 @@ const MyPostsAndReels: React.FC = () => {
         return url;
     };
 
+    const extractItems = (data: any): any[] | null => {
+        if (!data) return null;
+        if (Array.isArray(data)) return data;
+        for (const key of ['post', 'posts', 'items', 'data', 'list']) {
+            const candidate = data[key];
+            if (candidate?.items) return candidate.items;
+            if (Array.isArray(candidate)) return candidate;
+        }
+        if (data.items) return data.items;
+        return null;
+    };
+
+    const mapItem = (item: any): Post => ({
+        id: String(item.id),
+        author: {
+            id: String(item.user?.id || item.user_id),
+            name: `${item.user?.first_name || ""} ${item.user?.last_name || ""}`.trim() || "Unknown User",
+            avatar: sanitizeUrl(item.user?.picture || "/images/user_profile_placeholder.jpeg"),
+            title: item.user?.designation ?? item.user?.employerDetails?.designation ?? "",
+            is_premium: item.user?.is_premium || false,
+            user_mode_type: item.user?.user_mode_type,
+        },
+        content: item.title || "",
+        media: item.postGallary && item.postGallary.length > 0 ? {
+            type: item.postGallary[0].media_type === 2 ? "video" : "image",
+            url: sanitizeUrl(item.postGallary[0].filenameUrl),
+            alt: item.title || "Post media",
+        } : undefined,
+        timestamp: item.created_at || "Recently",
+        likes: item.total_like || 0,
+        comments: item.total_comment || 0,
+        shares: item.total_share || 0,
+        isLiked: item.is_like,
+        view_count: item.view_count || 0,
+        connection_status: "connected",
+        reposted_by: item.reposted_by || null,
+        original_post: item.original_post || null,
+    });
+
     const fetchMyPosts = async () => {
         try {
             setLoadingPosts(true);
             const response = await postService.getMyPosts(1, 20);
             const apiData: any = response.data;
-            const postsData = apiData?.data?.post;
+            const items = extractItems(apiData?.data) ?? extractItems(apiData);
 
-            if (postsData && postsData.items) {
-                const mappedPosts = postsData.items.map((item: any) => ({
-                    id: String(item.id),
-                    author: {
-                        id: String(item.user?.id || item.user_id),
-                        name: `${item.user?.first_name || ""} ${item.user?.last_name || ""}`.trim() || "Unknown User",
-                        avatar: sanitizeUrl(item.user?.picture || "/images/user_profile_placeholder.jpeg"),
-                        title: item.user?.designation ?? item.user?.employerDetails?.designation ?? "",
-                        is_premium: item.user?.is_premium || false,
-                        user_mode_type: item.user?.user_mode_type,
-                    },
-                    content: item.title || "",
-                    media: item.postGallary && item.postGallary.length > 0 ? {
-                        type: item.postGallary[0].media_type === 2 ? "video" : "image",
-                        url: sanitizeUrl(item.postGallary[0].filenameUrl),
-                        alt: item.title || "Post media",
-                    } : undefined,
-                    timestamp: item.created_at || "Recently",
-                    likes: item.total_like || 0,
-                    comments: item.total_comment || 0,
-                    shares: item.total_share || 0,
-                    isLiked: item.is_like,
-                    view_count: item.view_count || 0,
-                    connection_status: "connected", // It's my own post
-                    reposted_by: item.reposted_by || null,
-                    original_post: item.original_post || null,
-                }));
-                setPosts(mappedPosts);
+            if (items && items.length > 0) {
+                setPosts(items.map(mapItem));
+            } else {
+                setPosts([]);
             }
         } catch (err: any) {
             console.error("Error fetching my posts:", err);

@@ -111,17 +111,33 @@ export default function ManageJobsContent() {
   const [isBulkUploading, setIsBulkUploading] = useState(false);
   const [isDownloadingSample, setIsDownloadingSample] = useState(false);
 
+  const extractJobItems = (data: any): any[] | null => {
+    if (!data) return null;
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.items)) return data.items;
+    if (data.data && Array.isArray(data.data)) return data.data;
+    if (data.data?.items && Array.isArray(data.data.items)) return data.data.items;
+    for (const key of ['jobs', 'list', 'results']) {
+      if (Array.isArray(data[key])) return data[key];
+      if (data[key]?.items && Array.isArray(data[key].items)) return data[key].items;
+    }
+    return null;
+  };
+
   const fetchJobs = async () => {
     try {
       setIsLoading(true);
       const response = await jobService.getMyJobPosts(100000000, 'apply');
-      if (response && response.data && Array.isArray(response.data.items)) {
-        const mappedJobs = response.data.items.map(mapApiJobToLocal);
+      const items = extractJobItems(response?.data) ?? extractJobItems(response);
+      if (items && items.length > 0) {
+        const mappedJobs = items.map(mapApiJobToLocal);
         const currentLogo = user?.employerDetails?.company_logo_url;
         if (currentLogo) {
           mappedJobs.forEach(job => { job.companyLogo = currentLogo; });
         }
         setJobs(mappedJobs);
+      } else {
+        setJobs([]);
       }
     } catch (error) {
       console.error('Failed to fetch jobs:', error);
