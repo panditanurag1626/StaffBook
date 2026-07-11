@@ -295,10 +295,7 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
 
       {activeTab === "versions" && (
         <>
-          <div className={`space-y-8 ${THEME.layout.spacing.xl}`}>
-            {/* Action Cards Row */}
-
-            {/* Action Cards Row */}
+          <div className={`space-y-8 p-4 md:p-6 ${THEME.layout.spacing.xl}`}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div onClick={() => handleTabChange("builder")} className="cursor-pointer">
                 <CreateResumeCard />
