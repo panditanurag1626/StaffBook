@@ -1431,7 +1431,9 @@ function JobManagementContent() {
 
                 {/* Content based on active tab */}
                 {activeTab === 'resume' && (
-                  <ResumeContent queryParam="resumeTab" />
+                  <div className="mt-6">
+                    <ResumeContent queryParam="resumeTab" />
+                  </div>
                 )}
 
                 {activeTab === "applications" && (
