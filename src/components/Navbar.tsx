@@ -84,10 +84,10 @@ const Navbar = () => {
   return (
     <>
       <div className={`w-full h-[70px] fixed top-0 z-[100] ${path === '/' ? 'bg-transparent text-white' : 'bg-white'} border-x-0 border-y-0 rounded-none transition-all duration-300`}>
-        <div className="w-full max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 lg:px-8 relative">
+        <div className="w-full max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 lg:px-8">
 
           {/* Left Side: Logo + Search */}
-          <div className="flex items-center gap-2 lg:gap-3">
+          <div className="flex items-center gap-2 lg:gap-3 lg:flex-1">
             <div className="flex flex-row gap-3 items-center">
               {/* Logo Section */}
               <div className="flex h-full items-center justify-center w-10">
@@ -148,17 +148,15 @@ const Navbar = () => {
           </div>
 
           {/* Center: Nav Items */}
-          <div className="absolute left-1/2 -translate-x-1/2 hidden lg:block">
-            {user && !['/signin', '/signup'].includes(path) ? (
-              <NavbarDesktop links={filteredLinks} currentPath={path} />
-            ) : (
-              path !== '/' && <NavbarDesktop links={navLinks} currentPath={path} onAuthClick={() => setIsAuthModalOpen(true)} />
-            )}
-          </div>
+          {user && !['/signin', '/signup'].includes(path) ? (
+            <NavbarDesktop links={filteredLinks} currentPath={path} />
+          ) : (
+            path !== '/' && <NavbarDesktop links={navLinks} currentPath={path} onAuthClick={() => setIsAuthModalOpen(true)} />
+          )}
 
           {/* Right Side: Icons + Profile / Auth Buttons */}
           {user && !['/signin', '/signup'].includes(path) ? (
-            <div className="hidden lg:flex items-center gap-2 ml-auto">
+            <div className="hidden lg:flex items-center gap-2 lg:flex-1 lg:justify-end">
               <div className="mr-6">
                 <NavbarIconButton
                   onNotificationsClick={() => setNotificationsOpen(true)}
@@ -176,7 +174,7 @@ const Navbar = () => {
               />
             </div>
           ) : (
-            <div className="hidden lg:flex items-center ml-auto">
+            <div className="hidden lg:flex items-center lg:flex-1 lg:justify-end">
               {path === '/signin' ? (
                 <Link
                   href="/signup"
