@@ -27,7 +27,7 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
   };
 
   return (
-    <nav className="hidden lg:flex items-center gap-3">
+    <nav className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
       {links.map((link) => {
         const isActive = (href: string) => {
           if (href === '/' || href === '') return currentPath === href;

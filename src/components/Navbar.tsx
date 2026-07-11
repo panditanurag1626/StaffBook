@@ -148,11 +148,13 @@ const Navbar = () => {
           </div>
 
           {/* Center: Nav Items */}
-          {user && !['/signin', '/signup'].includes(path) ? (
-            <NavbarDesktop links={filteredLinks} currentPath={path} />
-          ) : (
-            path !== '/' && <NavbarDesktop links={navLinks} currentPath={path} onAuthClick={() => setIsAuthModalOpen(true)} />
-          )}
+          <div className="flex-1 min-w-0 overflow-hidden">
+            {user && !['/signin', '/signup'].includes(path) ? (
+              <NavbarDesktop links={filteredLinks} currentPath={path} />
+            ) : (
+              path !== '/' && <NavbarDesktop links={navLinks} currentPath={path} onAuthClick={() => setIsAuthModalOpen(true)} />
+            )}
+          </div>
 
           {/* Right Side: Icons + Profile / Auth Buttons */}
           {user && !['/signin', '/signup'].includes(path) ? (
