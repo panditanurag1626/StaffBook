@@ -83,7 +83,7 @@ const Navbar = () => {
   return (
     <>
       <div className={`w-full h-[70px] fixed top-0 z-[100] ${path === '/' ? 'bg-transparent text-white' : 'bg-white'} border-x-0 border-y-0 rounded-none transition-all duration-300`}>
-        <div className="w-full max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 lg:px-8 relative">
 
           {/* Left Side: Logo + Search */}
           <div className="flex items-center gap-2 lg:gap-3">
@@ -147,11 +147,13 @@ const Navbar = () => {
           </div>
 
           {/* Center: Nav Items */}
-          {user && !['/signin', '/signup'].includes(path) ? (
-            <NavbarDesktop links={filteredLinks} currentPath={path} />
-          ) : (
-            path !== '/' && <NavbarDesktop links={navLinks} currentPath={path} onAuthClick={() => setIsAuthModalOpen(true)} />
-          )}
+          <div className="absolute left-1/2 -translate-x-1/2 hidden lg:block">
+            {user && !['/signin', '/signup'].includes(path) ? (
+              <NavbarDesktop links={filteredLinks} currentPath={path} />
+            ) : (
+              path !== '/' && <NavbarDesktop links={navLinks} currentPath={path} onAuthClick={() => setIsAuthModalOpen(true)} />
+            )}
+          </div>
 
           {/* Right Side: Icons + Profile / Auth Buttons */}
           {user && !['/signin', '/signup'].includes(path) ? (
