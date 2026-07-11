@@ -87,9 +87,6 @@ const LegalPage: React.FC<LegalPageProps> = ({ slug, fallbackTitle }) => {
           />
         </div>
 
-        <div className="mt-12 text-center text-gray-400 text-sm">
-          <p>© {new Date().getFullYear()} Staffbook. All rights reserved.</p>
-        </div>
       </div>
     </div>
   );
