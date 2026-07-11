@@ -8,7 +8,7 @@ const NetworkingLayout: React.FC = () => {
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
 
   return (
-    <div className='pt-0'>
+    <div className='pt-4'>
       {/* Mobile: Bottom sheet map modal */}
       <MobileMapBottomSheet
         isOpen={isBottomSheetOpen}
