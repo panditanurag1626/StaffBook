@@ -248,7 +248,7 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="min-h-screen p-2 md:p-4 lg:p-8 mt-[60px] bg-[#f3f2ed]">
+    <div className="min-h-screen p-2 md:p-4 lg:p-8 mt-[60px] bg-[#f3f2ed] pb-16 lg:pb-8">
       <div className="w-full px-3 sm:px-6 max-w-7xl mx-auto">
         <nav className="flex items-center text-sm mb-6" aria-label="Breadcrumb">
           <button

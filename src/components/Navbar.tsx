@@ -13,6 +13,7 @@ import NotificationsModal from "./shared/NotificationsModal";
 import NavbarSearch from "./navbar/NavbarSearch";
 import NavbarDesktop from "./navbar/NavbarDesktop";
 import NavbarMobile from "./navbar/NavbarMobile";
+import MobileBottomNav from "./navbar/MobileBottomNav";
 import MeetingModal from "./shared/MeetingModal";
 import AuthModal from "./shared/AuthModal";
 import { NavLink } from "@/types/navigation";
@@ -274,6 +275,8 @@ const Navbar = () => {
         onClose={() => setNotificationsOpen(false)}
         buttonRef={bellButtonRef}
       />
+
+      <MobileBottomNav />
     </>
   );
 };
