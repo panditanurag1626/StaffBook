@@ -148,7 +148,7 @@ const Navbar = () => {
           </div>
 
           {/* Center: Nav Items */}
-          <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex-1 min-w-0">
             {user && !['/signin', '/signup'].includes(path) ? (
               <NavbarDesktop links={filteredLinks} currentPath={path} />
             ) : (
