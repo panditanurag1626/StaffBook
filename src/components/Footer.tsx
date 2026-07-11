@@ -52,12 +52,7 @@ export default function Footer({ showMobile }: { showMobile?: boolean }) {
           </div>
         </div>
 
-        {/* Copyright / Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-gray-200/60">
-          <p className="text-center text-xs text-gray-500">
-            &copy; {new Date().getFullYear()} {SITE_CONFIG.name || 'Staff Book'}. All Rights Reserved by Staff Book.
-          </p>
-        </div>
+        
       </div>
     </footer>
   );
