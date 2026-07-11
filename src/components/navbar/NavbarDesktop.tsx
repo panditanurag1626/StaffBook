@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useState } from "react";
-import { FiChevronDown, FiBriefcase, FiEye, FiTrendingUp, FiUsers, FiFileText, FiUserCheck, FiUserPlus, FiStar } from "react-icons/fi";
+import { FiChevronDown, FiBriefcase, FiEye, FiTrendingUp, FiUsers, FiFileText, FiUserCheck } from "react-icons/fi";
 import { NavLink } from "@/types/navigation";
 import Button from "../shared/Button";
 
@@ -9,14 +9,6 @@ interface NavbarDesktopProps {
   currentPath: string;
   onAuthClick?: () => void;
 }
-
-const DEFAULT_ICONS: Record<string, React.ReactNode> = {
-  "Networking": <FiUsers className="w-4 h-4 lg:w-5 lg:h-5" />,
-  "Find Candidates": <FiBriefcase className="w-4 h-4 lg:w-5 lg:h-5" />,
-  "Find Jobs": <FiBriefcase className="w-4 h-4 lg:w-5 lg:h-5" />,
-  "My Connections": <FiUserPlus className="w-4 h-4 lg:w-5 lg:h-5" />,
-  "Services": <FiStar className="w-4 h-4 lg:w-5 lg:h-5" />,
-};
 
 const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -35,7 +27,7 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
   };
 
   return (
-    <nav className="flex items-center gap-1 lg:gap-3 flex-shrink-0">
+    <nav className="flex items-center gap-0.5 lg:gap-2 flex-shrink-0">
       {links.map((link) => {
         const isActive = (href: string) => {
           if (href === '/' || href === '') return currentPath === href;
@@ -43,7 +35,6 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
         };
 
         const isLinkActive = isActive(link.href);
-        const defaultIcon = DEFAULT_ICONS[link.label];
 
         return (
           <div key={link.label} className="relative">
@@ -52,14 +43,13 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
                 <Button
                   variant="ghost"
                   onClick={() => setOpenDropdown(openDropdown === link.label ? null : link.label)}
-                  className={`text-[10px] lg:text-sm font-medium font-sans px-1.5 lg:px-3 py-1 rounded-full transition-all flex items-center gap-0.5 lg:gap-1 whitespace-nowrap hover:scale-105 hover:shadow-md ${isLinkActive
+                  className={`text-[9px] lg:text-sm font-medium font-sans px-[5px] lg:px-3 py-0.5 lg:py-1 rounded-full transition-all flex items-center gap-0.5 lg:gap-1 whitespace-nowrap hover:scale-105 hover:shadow-md ${isLinkActive
                       ? "bg-purple-50 text-purple-700 font-semibold shadow-sm"
                       : "text-gray-600 hover:text-purple-700 hover:bg-purple-50/50"
                     }`}
                 >
-                  {defaultIcon}
-<span className="hidden lg:inline">{link.label}</span>
-                  <FiChevronDown className={`transition-transform w-2.5 h-2.5 lg:w-4 lg:h-4 ${openDropdown === link.label ? 'rotate-180' : ''}`} />
+                  {link.label}
+                  <FiChevronDown className={`transition-transform w-[10px] h-[10px] lg:w-4 lg:h-4 ${openDropdown === link.label ? 'rotate-180' : ''}`} />
                 </Button>
                 {openDropdown === link.label && (
                   <>
@@ -117,24 +107,22 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
             ) : link.href === '#' ? (
               <button
                 onClick={onAuthClick}
-                className={`text-[10px] lg:text-sm font-medium font-sans px-1.5 lg:px-3 py-1 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
+                className={`text-[9px] lg:text-sm font-medium font-sans px-[5px] lg:px-3 py-0.5 lg:py-1 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
                     ? "bg-purple-50 text-purple-700 font-semibold shadow-sm"
                     : "text-gray-600 hover:text-purple-700 hover:bg-purple-50/50"
                   }`}
               >
-                {defaultIcon}
-                <span className="hidden lg:inline">{link.label}</span>
+                {link.label}
               </button>
             ) : (
               <Link
                 href={link.href}
-                className={`text-[10px] lg:text-sm font-medium font-sans px-1.5 lg:px-3 py-1 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
+                className={`text-[9px] lg:text-sm font-medium font-sans px-[5px] lg:px-3 py-0.5 lg:py-1 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
                     ? "bg-purple-50 text-purple-700 font-semibold shadow-sm"
                     : "text-gray-600 hover:text-purple-700 hover:bg-purple-50/50"
                   }`}
               >
-                {defaultIcon}
-                <span className="lg:inline">{link.label}</span>
+                {link.label}
               </Link>
             )}
           </div>
