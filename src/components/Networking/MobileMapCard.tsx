@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { FiMaximize2, FiMapPin } from "react-icons/fi";
 import { connectionService } from "../../lib/api/services/connectionService";
 import { getCurrentLocation } from "../../lib/utils";
@@ -57,18 +56,8 @@ const MobileMapCard: React.FC = () => {
       className="lg:hidden w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-shadow mt-1 mb-2"
     >
       {/* Top Map Image Preview */}
-      <div className="relative h-32 w-full bg-gray-100">
-        <Image 
-          src="/images/map-preview-bg.png" 
-          alt="Map Preview" 
-          fill 
-          className="object-cover"
-        />
-        {/* Placeholder overlay if no image exists - mimicking a map look */}
-        <div className="absolute inset-0 bg-blue-50/50 mix-blend-multiply" />
+      <div className="relative h-32 w-full bg-gradient-to-br from-blue-100 to-blue-50">
         <div className="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=19.076,72.8777&zoom=12&size=600x300&maptype=roadmap&key=AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo')] bg-cover bg-center" />
-        
-        {/* Semi-transparent overlay to make text readable if needed */}
         <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/20 to-transparent" />
       </div>
 
