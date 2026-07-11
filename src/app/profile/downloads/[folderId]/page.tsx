@@ -469,7 +469,7 @@ export default function FolderViewPage() {
                     {previewFile && (
                         <div className="flex flex-col h-full">
                             {/* Header with padding to avoid overlap with Modal close button */}
-                            <div className="flex items-center justify-between pt-4 sm:pt-3 pr-4 pl-6 pb-3 border-b border-gray-100">
+                            <div className="flex items-center justify-between pt-4 sm:pt-3 pr-14 pl-6 pb-3 border-b border-gray-100">
                                 <div className="min-w-0 flex-1 mr-2">
                                     <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">
                                         {previewFile.applicant.first_name} {previewFile.applicant.last_name}
