@@ -41,8 +41,15 @@ function RecruiterInsightsContent() {
   React.useEffect(() => {
     const fetchAnalyticsData = async () => {
       try {
-        const response = await userService.getProfileAnalytics();
-        setAnalyticsData(response.data);
+        const res = await userService.getProfileAnalytics();
+        const extractData = (obj: any): any | null => {
+          if (!obj) return null;
+          if (obj?.overview || obj?.job_seeker_mode || obj?.employer_mode) return obj;
+          if (obj?.data?.overview || obj?.data?.job_seeker_mode) return obj.data;
+          if (obj?.analytics?.overview) return obj.analytics;
+          return null;
+        };
+        setAnalyticsData(extractData(res) ?? extractData(res?.data) ?? null);
       } catch (error) {
         console.error('Error fetching analytics data:', error);
       }

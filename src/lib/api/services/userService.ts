@@ -232,7 +232,7 @@ export const userService = {
 
 
     getProfileAnalytics: async (): Promise<ApiResponse<any>> => {
-        const response = await apiClient.get<ApiResponse<any>>('user/profile-analytics');
+        const response = await apiClient.post<ApiResponse<any>>('user/profile-analytics');
         return response.data;
     },
 
