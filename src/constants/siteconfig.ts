@@ -380,7 +380,6 @@ export const LOGGED_IN_LINKS = [
   },
   { label: 'My Connections', href: '/connections' },
   { label: 'Services', href: '/premium-services' },
-  { label: 'Careers', href: '/careers' },
 ];
 
 export const PROFILE_PERFORMANCE_TITLE = 'Profile Performance';
