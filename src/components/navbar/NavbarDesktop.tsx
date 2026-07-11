@@ -27,7 +27,7 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
   };
 
   return (
-    <nav className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
+    <nav className="flex items-center gap-3 flex-shrink-0">
       {links.map((link) => {
         const isActive = (href: string) => {
           if (href === '/' || href === '') return currentPath === href;
@@ -44,13 +44,13 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
                 <Button
                   variant="ghost"
                   onClick={() => setOpenDropdown(openDropdown === link.label ? null : link.label)}
-                  className={`text-sm font-medium font-sans px-3 py-1.5 rounded-full transition-all flex items-center gap-1 whitespace-nowrap hover:scale-105 hover:shadow-md ${isLinkActive
+                  className={`text-[11px] lg:text-sm font-medium font-sans px-2 lg:px-3 py-1 lg:py-1.5 rounded-full transition-all flex items-center gap-1 whitespace-nowrap hover:scale-105 hover:shadow-md ${isLinkActive
                       ? "bg-purple-50 text-purple-700 font-semibold shadow-sm"
                       : "text-gray-600 hover:text-purple-700 hover:bg-purple-50/50"
                     }`}
                 >
                   {link.label}
-                  <FiChevronDown className={`transition-transform w-4 h-4 ${openDropdown === link.label ? 'rotate-180' : ''}`} />
+                  <FiChevronDown className={`transition-transform w-3 h-3 lg:w-4 lg:h-4 ${openDropdown === link.label ? 'rotate-180' : ''}`} />
                 </Button>
                 {openDropdown === link.label && (
                   <>
@@ -108,7 +108,7 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
             ) : link.href === '#' ? (
               <button
                 onClick={onAuthClick}
-                className={`text-sm font-medium font-sans px-3 py-2 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
+                className={`text-[11px] lg:text-sm font-medium font-sans px-2 lg:px-3 py-1.5 lg:py-2 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
                     ? "bg-purple-50 text-purple-700 font-semibold shadow-sm"
                     : "text-gray-600 hover:text-purple-700 hover:bg-purple-50/50"
                   }`}
@@ -118,7 +118,7 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
             ) : (
               <Link
                 href={link.href}
-                className={`text-sm font-medium font-sans px-3 py-2 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
+                className={`text-[11px] lg:text-sm font-medium font-sans px-2 lg:px-3 py-1.5 lg:py-2 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
                     ? "bg-purple-50 text-purple-700 font-semibold shadow-sm"
                     : "text-gray-600 hover:text-purple-700 hover:bg-purple-50/50"
                   }`}
