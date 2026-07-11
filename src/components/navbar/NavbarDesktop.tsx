@@ -43,7 +43,7 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
                 <Button
                   variant="ghost"
                   onClick={() => setOpenDropdown(openDropdown === link.label ? null : link.label)}
-                  className={`text-[8px] lg:text-sm font-medium font-sans px-[3px] lg:px-3 py-[1px] lg:py-1 rounded-full transition-all flex items-center gap-0.5 lg:gap-1 whitespace-nowrap hover:scale-105 hover:shadow-md ${isLinkActive
+                  className={`text-[10px] lg:text-sm font-medium font-sans px-[4px] lg:px-3 py-[2px] lg:py-1 rounded-full transition-all flex items-center gap-0.5 lg:gap-1 whitespace-nowrap hover:scale-105 hover:shadow-md ${isLinkActive
                       ? "bg-purple-50 text-purple-700 font-semibold shadow-sm"
                       : "text-gray-600 hover:text-purple-700 hover:bg-purple-50/50"
                     }`}
@@ -107,7 +107,7 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
             ) : link.href === '#' ? (
               <button
                 onClick={onAuthClick}
-                className={`text-[8px] lg:text-sm font-medium font-sans px-[3px] lg:px-3 py-[1px] lg:py-1 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
+                className={`text-[10px] lg:text-sm font-medium font-sans px-[4px] lg:px-3 py-[2px] lg:py-1 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
                     ? "bg-purple-50 text-purple-700 font-semibold shadow-sm"
                     : "text-gray-600 hover:text-purple-700 hover:bg-purple-50/50"
                   }`}
@@ -117,7 +117,7 @@ const NavbarDesktop = ({ links, currentPath, onAuthClick }: NavbarDesktopProps) 
             ) : (
               <Link
                 href={link.href}
-                className={`text-[8px] lg:text-sm font-medium font-sans px-[3px] lg:px-3 py-[1px] lg:py-1 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
+                className={`text-[10px] lg:text-sm font-medium font-sans px-[4px] lg:px-3 py-[2px] lg:py-1 rounded-full whitespace-nowrap transition-all hover:scale-105 hover:shadow-md ${isLinkActive
                     ? "bg-purple-50 text-purple-700 font-semibold shadow-sm"
                     : "text-gray-600 hover:text-purple-700 hover:bg-purple-50/50"
                   }`}

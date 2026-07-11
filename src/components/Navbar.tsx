@@ -137,6 +137,16 @@ const Navbar = () => {
             </div>
           )}
 
+          {/* Mobile search icon */}
+          {user && (
+            <button
+              onClick={() => setSearchOpen(!searchOpen)}
+              className={`lg:hidden shrink-0 ${path === '/networking' ? '' : 'invisible'}`}
+            >
+              <FiSearch size={16} className="text-gray-700 mx-1" />
+            </button>
+          )}
+
           {/* Desktop Search */}
           <div className="hidden lg:block w-[200px] ml-3">
             {user && path === '/networking' && (
@@ -146,12 +156,12 @@ const Navbar = () => {
 
           {/* Nav Items - left aligned right after logo */}
           {user && !['/signin', '/signup'].includes(path) ? (
-            <div className="overflow-x-auto scrollbar-hide ml-1 lg:ml-4">
+            <div className="ml-1 lg:ml-4 shrink-0">
               <NavbarDesktop links={filteredLinks} currentPath={path} />
             </div>
           ) : (
             path !== '/' && (
-              <div className="overflow-x-auto scrollbar-hide ml-1 lg:ml-4">
+              <div className="ml-1 lg:ml-4 shrink-0">
                 <NavbarDesktop links={navLinks} currentPath={path} onAuthClick={() => setIsAuthModalOpen(true)} />
               </div>
             )
@@ -181,12 +191,6 @@ const Navbar = () => {
                 />
               </div>
               <div className="lg:hidden flex items-center gap-0 shrink-0">
-                <button
-                  onClick={() => setSearchOpen(!searchOpen)}
-                  className={`${path === '/networking' ? '' : 'invisible'}`}
-                >
-                  <FiSearch size={16} className="text-gray-700 mx-1" />
-                </button>
                 <NavbarIconButton
                   mobile
                   onNotificationsClick={() => setNotificationsOpen(true)}
