@@ -139,7 +139,7 @@ const Navbar = () => {
             </div>
 
             {/* Search Bar (Desktop) - Only on Networking pages */}
-            <div className="hidden lg:block w-[260px]">
+            <div className="hidden lg:block w-[200px]">
               {user && path === '/networking' && (
                 <NavbarSearch />
               )}
