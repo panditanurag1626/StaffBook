@@ -33,7 +33,7 @@ const features = [
 const seekerSteps = [
   { icon: FiUser, label: "Create Your Profile", img: "/homePage/profile.png", desc: "Sign up free and build your professional profile" },
   { icon: FiSearch, label: "Discover & Connect", img: "/homePage/job.png", desc: "Browse nearby jobs and connect with recruiters" },
-  { icon: FiMapPin, label: "Nearby Map Search", img: "/homePage/map.png", desc: "Discover opportunities around you" },
+  { icon: FiMapPin, label: "Nearby Map Search", img: "/homePage/map.png", desc: "Discover opportunities around you on an interactive map" },
   { icon: FiUsers, label: "Network via Reels & Stories", img: "/homePage/job-photo.png", desc: "Showcase your personality visually" },
   { icon: FiMessageSquare, label: "Chat & Video Calls", img: "/homePage/chat1.png", desc: "Message recruiters and attend video interviews" },
   { icon: FiDownload, label: "Track & Get Hired", img: "/homePage/ats.png", desc: "Manage applications and land your dream job" },
@@ -42,7 +42,7 @@ const seekerSteps = [
 const employerSteps = [
   { icon: FiBriefcase, label: "Post Jobs Free", img: "/homePage/post-job-cover.png", desc: "Reach thousands of qualified candidates" },
   { icon: FiUsers, label: "Find Candidates", img: "/homePage/profile.png", desc: "Advanced filters for precise candidate matching" },
-  { icon: FiMapPin, label: "Nearby Map Search", img: "/homePage/map.png", desc: "Discover local talent in your area" },
+  { icon: FiMapPin, label: "Nearby Map Search", img: "/homePage/map.png", desc: "Discover local talent in your area on an interactive map" },
   { icon: FiVideo, label: "Video Interviews", img: "/homePage/chat1.png", desc: "Built-in calls — no third-party needed" },
   { icon: FiMessageSquare, label: "Chat in Real-Time", img: "/homePage/chat2.png", desc: "Instant messaging with applicants" },
   { icon: FiDownload, label: "Manage & Export", img: "/homePage/ats.png", desc: "Bulk downloads, Excel export & insights" },
@@ -103,15 +103,11 @@ export default function RootPage() {
             <motion.div initial={{ opacity: 0, y: 40, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }} className="relative w-[280px] h-[570px] flex-shrink-0">
               <div className="absolute inset-0 bg-gradient-to-b from-purple-500/30 to-blue-500/30 rounded-[3.5rem] blur-2xl" />
               <div className="relative w-full h-full bg-white rounded-[3.5rem] border-[4px] border-gray-200 shadow-2xl overflow-hidden flex flex-col">
-                <div className="relative h-7 flex items-center justify-center bg-white">
-                  <div className="w-24 h-1.5 bg-gray-300 rounded-full" />
-                </div>
+                <div className="relative h-7 flex items-center justify-center bg-white"><div className="w-24 h-1.5 bg-gray-300 rounded-full" /></div>
                 <div className="flex-1 relative bg-black">
                   <video className="w-full h-full object-cover" autoPlay muted loop playsInline src="/Videos/staffbook.mp4" />
                 </div>
-                <div className="h-1.5 flex items-center justify-center bg-white">
-                  <div className="w-28 h-1 bg-gray-200 rounded-full" />
-                </div>
+                <div className="h-1.5 flex items-center justify-center bg-white"><div className="w-28 h-1 bg-gray-200 rounded-full" /></div>
               </div>
             </motion.div>
           </div>
@@ -132,7 +128,7 @@ export default function RootPage() {
               Built for the way hiring works{" "}
               <span className="bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">today</span>
             </h2>
-            <p className="text-base md:text-lg text-gray-500 mt-3 max-w-2xl mx-auto">Modern tools for job seekers and employers alike</p>
+            <p className="text-base md:text-lg text-gray-500 mt-3 max-w-2xl mx-auto">Modern tools designed to make job hunting and hiring effortless.</p>
           </motion.div>
           <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {features.map((f, i) => {
@@ -152,40 +148,8 @@ export default function RootPage() {
         </div>
       </section>
 
-      {/* ===== SIMPLE PROCESS (3 steps) ===== */}
+      {/* ===== JOB SEEKERS ===== */}
       <section className="w-full bg-gradient-to-br from-[#f8f6ff] to-white py-20 md:py-28 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-14">
-            <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-medium text-[#101022] leading-tight">
-              Simple{" "}
-              <span className="bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">Process</span>
-            </h2>
-            <p className="text-base text-gray-500 mt-3 max-w-xl mx-auto">Get started in three simple steps</p>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              { num: "01", title: "Create Your Profile", desc: "Sign up for free and build your professional profile with your skills, experience, and preferences.", icon: FiUser, gradient: "from-purple-500 to-blue-500" },
-              { num: "02", title: "Discover & Connect", desc: "Browse nearby jobs, connect with recruiters, and grow your network through posts and reels.", icon: FiSearch, gradient: "from-blue-500 to-cyan-500" },
-              { num: "03", title: "Chat & Get Hired", desc: "Message recruiters in real-time, attend video interviews, and land your next opportunity.", icon: FiMessageSquare, gradient: "from-purple-500 to-fuchsia-500" },
-            ].map((step, i) => {
-              const Icon = step.icon;
-              return (
-                <motion.div key={step.num} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6 }} className="text-center">
-                  <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${step.gradient} flex items-center justify-center shadow-lg shadow-purple-200 mb-5`}>
-                    <Icon className="w-7 h-7 text-white" />
-                  </div>
-                  <p className="text-3xl font-bold text-purple-600/30 mb-3">{step.num}</p>
-                  <h3 className="text-lg font-semibold text-[#101022] mb-2">{step.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">{step.desc}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== JOB SEEKER JOURNEY ===== */}
-      <section className="w-full bg-white py-20 md:py-28 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-14">
             <span className="inline-block text-xs font-semibold uppercase tracking-widest text-purple-600 bg-purple-50 px-4 py-1.5 rounded-full mb-4">For Job Seekers</span>
@@ -224,8 +188,8 @@ export default function RootPage() {
         </div>
       </section>
 
-      {/* ===== EMPLOYER JOURNEY ===== */}
-      <section className="w-full bg-gradient-to-br from-[#f8f6ff] to-white py-20 md:py-28 overflow-hidden">
+      {/* ===== EMPLOYERS ===== */}
+      <section className="w-full bg-white py-20 md:py-28 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-14">
             <span className="inline-block text-xs font-semibold uppercase tracking-widest text-blue-600 bg-blue-50 px-4 py-1.5 rounded-full mb-4">For Employers</span>
@@ -264,36 +228,41 @@ export default function RootPage() {
         </div>
       </section>
 
-      {/* ===== STATS + CTA ===== */}
+      {/* ===== CATEGORIES ===== */}
       <section className="w-full bg-white overflow-hidden relative">
         <div className="absolute right-0 top-1/2 transform translate-x-[200px] -translate-y-1/2 w-[925px] h-[1029px] bg-gradient-to-br from-purple-500/30 to-blue-500/30 blur-[200px] rounded-full opacity-60 pointer-events-none z-0" />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="text-center mb-14">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center pt-20 pb-12">
             <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-medium text-[#101022] leading-tight">
-              Trusted by thousands across{" "}
-              <span className="bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">India</span>
+              Your next opportunity{" "}
+              <span className="bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">awaits</span>
             </h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto mb-14">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-5 pb-24 max-w-[1371px] mx-auto">
             {[
-              { value: "10K+", label: "Active Jobs" },
-              { value: "50K+", label: "Professionals" },
-              { value: "2K+", label: "Companies" },
-              { value: "94%", label: "Satisfaction" },
-            ].map((s) => (
-              <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center">
-                <p className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">{s.value}</p>
-                <p className="text-sm text-gray-500 mt-1">{s.label}</p>
-              </motion.div>
-            ))}
+              { icon: FiBriefcase, title: "Software & IT", jobs: "1,200+ jobs available" },
+              { icon: FiUsers, title: "Marketing & Sales", jobs: "850+ jobs available" },
+              { icon: FiHeart, title: "Healthcare", jobs: "630+ jobs available" },
+              { icon: FiMapPin, title: "Remote & Hybrid", jobs: "2,100+ jobs available" },
+              { icon: FiStar, title: "Finance & Banking", jobs: "720+ jobs available" },
+              { icon: FiTrendingUp, title: "Business & Consulting", jobs: "540+ jobs available" },
+              { icon: FiSearch, title: "Data & Analytics", jobs: "480+ jobs available" },
+              { icon: FiClock, title: "Part-Time & Flexi", jobs: "390+ jobs available" },
+            ].map((cat, i) => {
+              const Icon = cat.icon;
+              return (
+                <div key={i} className="h-[81px] bg-white rounded-lg px-4 md:px-6 py-4 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                  <div className="w-[42px] h-[42px] bg-[#F6F6FE] rounded-full flex items-center justify-center">
+                    <Icon className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <h3 className="text-[16px] font-medium text-[#101022]">{cat.title}</h3>
+                    <p className="text-[14px] text-[#D9D9E2]">{cat.jobs}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center">
-            <h3 className="text-2xl md:text-3xl font-bold text-[#101022] mb-3">Ready to transform your career?</h3>
-            <p className="text-gray-500 max-w-md mx-auto mb-8">Join thousands of professionals who have found their next opportunity on StaffBook.</p>
-            <button onClick={() => router.push("/signup")} className="px-8 py-3.5 rounded-full font-semibold text-sm text-white bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-800 hover:to-purple-700 shadow-lg shadow-purple-300/40 hover:shadow-xl transition-all">
-              Create Your Free Account
-            </button>
-          </motion.div>
         </div>
       </section>
     </div>
