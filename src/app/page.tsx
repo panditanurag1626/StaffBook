@@ -7,45 +7,25 @@ import {
   FiArrowRight, FiPlay, FiUsers, FiMapPin, FiClock, FiVideo,
   FiMessageSquare, FiBriefcase, FiSearch, FiStar, FiShield,
   FiUser, FiDownload, FiTrendingUp, FiCheck, FiHeart,
+  FiCompass, FiHeadphones, FiCamera,
 } from "react-icons/fi";
-import { HiOutlineSparkles } from "react-icons/hi";
-import { MdSlowMotionVideo } from "react-icons/md";
-
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
-};
-const cardVariants = {
-  hidden: { opacity: 0, y: 40, scale: 0.95 },
-  visible: { transition: { duration: 0.5, ease: "easeOut" as const } },
-};
-
-const features = [
-  { icon: FiMapPin, title: "Location-Based Jobs", desc: "Set your preferred distance — from 2 km to 50 km — and discover opportunities near you.", gradient: "from-blue-500 to-cyan-500" },
-  { icon: FiMessageSquare, title: "Real-Time Chat", desc: "Chat directly with recruiters. See when they are online and get instant responses.", gradient: "from-purple-500 to-fuchsia-500" },
-  { icon: FiUsers, title: "Professional Network", desc: "Share posts, updates, and reels. Build your professional brand within your community.", gradient: "from-violet-500 to-purple-500" },
-  { icon: FiVideo, title: "Video Interviews", desc: "Built-in video calls for interviews and meetings. No third-party tools required.", gradient: "from-emerald-500 to-teal-500" },
-  { icon: FiSearch, title: "Smart Matching", desc: "AI-powered recommendations that match your skills, experience, and preferences.", gradient: "from-amber-500 to-orange-500" },
-  { icon: FiShield, title: "Verified Recruiters", desc: "Every recruiter is verified. No spam, no fake listings — just genuine opportunities.", gradient: "from-rose-500 to-pink-500" },
-  { icon: FiTrendingUp, title: "Career Insights", desc: "Track your applications, profile views, and get data-driven career recommendations.", gradient: "from-indigo-500 to-purple-500" },
-];
 
 const seekerSteps = [
-  { icon: FiUser, label: "Create Your Profile", img: "/homePage/profile.png", desc: "Sign up free and build your professional profile" },
-  { icon: FiSearch, label: "Discover & Connect", img: "/homePage/job.png", desc: "Browse nearby jobs and connect with recruiters" },
-  { icon: FiMapPin, label: "Nearby Map Search", img: "/homePage/map.png", desc: "Discover opportunities around you on an interactive map" },
-  { icon: FiUsers, label: "Network via Reels & Stories", img: "/homePage/job-photo.png", desc: "Showcase your personality visually" },
-  { icon: FiMessageSquare, label: "Chat & Video Calls", img: "/homePage/chat1.png", desc: "Message recruiters and attend video interviews" },
-  { icon: FiDownload, label: "Track & Get Hired", img: "/homePage/ats.png", desc: "Manage applications and land your dream job" },
+  { icon: FiUser, label: "Build Your Profile", img: "/homePage/profile.png", desc: "Add your skills, experience, and preferences in minutes" },
+  { icon: FiSearch, label: "Explore Opportunities", img: "/homePage/job.png", desc: "Browse curated jobs matching your unique profile" },
+  { icon: FiMapPin, label: "Location-Aware Search", img: "/homePage/map.png", desc: "See jobs on an interactive map sorted by distance" },
+  { icon: FiCamera, label: "Showcase with Reels", img: "/homePage/job-photo.png", desc: "Short videos that help you stand out to recruiters" },
+  { icon: FiMessageSquare, label: "Direct Chat & Interview", img: "/homePage/chat1.png", desc: "Message recruiters and hop on video calls instantly" },
+  { icon: FiDownload, label: "Manage & Succeed", img: "/homePage/ats.png", desc: "Track offers, download resumes, and get hired faster" },
 ];
 
 const employerSteps = [
-  { icon: FiBriefcase, label: "Post Jobs Free", img: "/homePage/post-job-cover.png", desc: "Reach thousands of qualified candidates" },
-  { icon: FiUsers, label: "Find Candidates", img: "/homePage/profile.png", desc: "Advanced filters for precise candidate matching" },
-  { icon: FiMapPin, label: "Nearby Map Search", img: "/homePage/map.png", desc: "Discover local talent in your area on an interactive map" },
-  { icon: FiVideo, label: "Video Interviews", img: "/homePage/chat1.png", desc: "Built-in calls — no third-party needed" },
-  { icon: FiMessageSquare, label: "Chat in Real-Time", img: "/homePage/chat2.png", desc: "Instant messaging with applicants" },
-  { icon: FiDownload, label: "Manage & Export", img: "/homePage/ats.png", desc: "Bulk downloads, Excel export & insights" },
+  { icon: FiBriefcase, label: "Post in Minutes", img: "/homePage/post-job-cover.png", desc: "Create and publish job listings with smart templates" },
+  { icon: FiUsers, label: "Smart Candidate Discovery", img: "/homePage/profile.png", desc: "AI-powered matching finds the right talent for you" },
+  { icon: FiMapPin, label: "Local Talent Pool", img: "/homePage/map.png", desc: "Zero in on candidates within a specific radius" },
+  { icon: FiVideo, label: "Interview on Platform", img: "/homePage/chat1.png", desc: "Built-in video calls — no Zoom links or coordination hassles" },
+  { icon: FiMessageSquare, label: "Instant Communication", img: "/homePage/chat2.png", desc: "Chat with applicants in real-time, answer questions fast" },
+  { icon: FiDownload, label: "Bulk Operations", img: "/homePage/ats.png", desc: "Download resumes, export data, and manage hiring at scale" },
 ];
 
 const stepVariantsL = {
@@ -76,12 +56,12 @@ export default function RootPage() {
                 <span className="text-xs font-semibold uppercase tracking-wider text-purple-700">India's First AI-Powered Job Portal</span>
               </div>
               <h1 className="font-['Inter_Tight',system-ui,sans-serif] font-bold leading-[0.95] tracking-[-0.03em] text-[#1a0033]">
-                <span className="text-[clamp(1.8rem,5vw,3rem)] block">Your Next Job is</span>
-                <span className="text-[clamp(1.8rem,5vw,3rem)] bg-gradient-to-r from-purple-700 via-fuchsia-600 to-purple-600 text-transparent bg-clip-text">Closer</span>
-                <span className="text-[clamp(1.8rem,5vw,3rem)] block text-[#2d0a4e]">Than You Think</span>
+                <span className="text-[clamp(1.8rem,5vw,3rem)] block">Jobs that match</span>
+                <span className="text-[clamp(1.8rem,5vw,3rem)] bg-gradient-to-r from-purple-700 via-fuchsia-600 to-purple-600 text-transparent bg-clip-text">your life</span>
+                <span className="text-[clamp(1.8rem,5vw,3rem)] block text-[#2d0a4e]">not just your resume</span>
               </h1>
               <p className="text-base md:text-lg text-[#2d0a4e]/70 mt-5 max-w-lg mx-auto lg:mx-0 leading-relaxed">
-                StaffBook connects you with real recruiters, nearby opportunities, and a professional network — all at your fingertips.
+                StaffBook brings together nearby jobs, real-time recruiter access, and a professional community — purpose-built for the Indian workforce.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-4 mt-8">
                 <button onClick={() => router.push("/signup")} className="group w-full sm:w-auto px-8 py-3.5 rounded-full font-semibold text-sm text-white bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-800 hover:to-purple-700 shadow-lg shadow-purple-300/40 hover:shadow-xl hover:shadow-purple-300/50 transition-all duration-300 flex items-center justify-center gap-2">
@@ -120,44 +100,16 @@ export default function RootPage() {
         </motion.div>
       </section>
 
-      {/* ===== FEATURES ===== */}
-      <section className="w-full bg-white py-20 md:py-28 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-14">
-            <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-medium text-[#101022] leading-tight">
-              Built for the way hiring works{" "}
-              <span className="bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">today</span>
-            </h2>
-            <p className="text-base md:text-lg text-gray-500 mt-3 max-w-2xl mx-auto">Modern tools designed to make job hunting and hiring effortless.</p>
-          </motion.div>
-          <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {features.map((f, i) => {
-              const Icon = f.icon;
-              return (
-                <motion.div key={i} variants={cardVariants} className="group relative bg-white rounded-2xl p-6 border border-gray-100 hover:border-transparent transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
-                  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.08))", border: "1px solid rgba(139,92,246,0.15)" }} />
-                  <div className={`relative z-10 w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br ${f.gradient} shadow-lg`}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="relative z-10 text-lg font-semibold text-[#101022] mb-2">{f.title}</h3>
-                  <p className="relative z-10 text-sm text-gray-500 leading-relaxed">{f.desc}</p>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ===== JOB SEEKERS ===== */}
+      {/* ===== FOR JOB SEEKERS ===== */}
       <section className="w-full bg-gradient-to-br from-[#f8f6ff] to-white py-20 md:py-28 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-14">
             <span className="inline-block text-xs font-semibold uppercase tracking-widest text-purple-600 bg-purple-50 px-4 py-1.5 rounded-full mb-4">For Job Seekers</span>
             <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-medium text-[#101022] leading-tight">
-              Your journey from{" "}
-              <span className="bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">resume to hired</span>
+              Your career,{" "}
+              <span className="bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">your rules</span>
             </h2>
-            <p className="text-base text-gray-500 mt-3 max-w-xl mx-auto">Every tool you need to find the right opportunity — all in one platform.</p>
+            <p className="text-base text-gray-500 mt-3 max-w-xl mx-auto">From building your profile to landing the offer — we stay with you at every step.</p>
           </motion.div>
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
             <motion.div initial={{ opacity: 0, y: 40, scale: 0.9 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.7, ease: "easeOut" }} className="relative w-[260px] h-[530px] flex-shrink-0">
@@ -188,16 +140,16 @@ export default function RootPage() {
         </div>
       </section>
 
-      {/* ===== EMPLOYERS ===== */}
+      {/* ===== FOR EMPLOYERS ===== */}
       <section className="w-full bg-white py-20 md:py-28 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-14">
             <span className="inline-block text-xs font-semibold uppercase tracking-widest text-blue-600 bg-blue-50 px-4 py-1.5 rounded-full mb-4">For Employers</span>
             <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-medium text-[#101022] leading-tight">
-              Hire smarter with{" "}
-              <span className="bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">StaffBook</span>
+              Find the right fit,{" "}
+              <span className="bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">fast</span>
             </h2>
-            <p className="text-base text-gray-500 mt-3 max-w-xl mx-auto">Everything you need to find, engage, and hire the right talent.</p>
+            <p className="text-base text-gray-500 mt-3 max-w-xl mx-auto">Smart tools that help you attract, evaluate, and hire top talent without the usual friction.</p>
           </motion.div>
           <div className="flex flex-col lg:flex-row-reverse items-center gap-12 lg:gap-16">
             <motion.div initial={{ opacity: 0, y: 40, scale: 0.9 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.7, ease: "easeOut" }} className="relative w-[260px] h-[530px] flex-shrink-0">
@@ -228,26 +180,27 @@ export default function RootPage() {
         </div>
       </section>
 
-      {/* ===== CATEGORIES ===== */}
+      {/* ===== BOTTOM CATEGORIES ===== */}
       <section className="w-full bg-white overflow-hidden relative">
         <div className="absolute right-0 top-1/2 transform translate-x-[200px] -translate-y-1/2 w-[925px] h-[1029px] bg-gradient-to-br from-purple-500/30 to-blue-500/30 blur-[200px] rounded-full opacity-60 pointer-events-none z-0" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center pt-20 pb-12">
             <h2 className="text-[24px] sm:text-[30px] md:text-[36px] font-medium text-[#101022] leading-tight">
-              Your next opportunity{" "}
-              <span className="bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">awaits</span>
+              Explore{" "}
+              <span className="bg-gradient-to-r from-purple-600 to-indigo-500 text-transparent bg-clip-text">opportunities</span>
+              {" "}across every field
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-5 pb-24 max-w-[1371px] mx-auto">
             {[
-              { icon: FiBriefcase, title: "Software & IT", jobs: "1,200+ jobs available" },
-              { icon: FiUsers, title: "Marketing & Sales", jobs: "850+ jobs available" },
-              { icon: FiHeart, title: "Healthcare", jobs: "630+ jobs available" },
-              { icon: FiMapPin, title: "Remote & Hybrid", jobs: "2,100+ jobs available" },
-              { icon: FiStar, title: "Finance & Banking", jobs: "720+ jobs available" },
-              { icon: FiTrendingUp, title: "Business & Consulting", jobs: "540+ jobs available" },
-              { icon: FiSearch, title: "Data & Analytics", jobs: "480+ jobs available" },
-              { icon: FiClock, title: "Part-Time & Flexi", jobs: "390+ jobs available" },
+              { icon: FiBriefcase, title: "Engineering & Tech", jobs: "1,200+ openings" },
+              { icon: FiHeadphones, title: "Customer Support", jobs: "680+ openings" },
+              { icon: FiHeart, title: "Healthcare & Pharma", jobs: "540+ openings" },
+              { icon: FiMapPin, title: "Remote & On-Site", jobs: "2,100+ openings" },
+              { icon: FiStar, title: "Banking & Insurance", jobs: "620+ openings" },
+              { icon: FiTrendingUp, title: "Consulting & Strategy", jobs: "490+ openings" },
+              { icon: FiCompass, title: "Travel & Hospitality", jobs: "370+ openings" },
+              { icon: FiClock, title: "Part-Time & Gig", jobs: "420+ openings" },
             ].map((cat, i) => {
               const Icon = cat.icon;
               return (
