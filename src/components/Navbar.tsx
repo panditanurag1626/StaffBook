@@ -87,16 +87,16 @@ const Navbar = () => {
         <div className="w-full max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 lg:px-8">
 
           {/* Left Side: Logo + Mobile profile toggle */}
-          <div className="flex items-center gap-1 lg:gap-3 lg:flex-1">
-            <div className="flex h-full items-center justify-center w-10">
+          <div className="flex items-center gap-0 lg:gap-3 lg:flex-1">
+            <div className="flex h-full items-center justify-center w-8 lg:w-10">
               <Link href="/networking" className="cursor-pointer">
                 <Image
                   src="/logoHalf.jpeg"
                   alt="Staff Book"
-                  width={40}
-                  height={40}
+                  width={32}
+                  height={32}
                   priority
-                  className="object-contain"
+                  className="object-contain lg:w-10 lg:h-10"
                 />
               </Link>
             </div>
@@ -107,12 +107,12 @@ const Navbar = () => {
                   className="relative rounded-full shadow-sm hover:bg-gray-50 transition-all active:scale-95 border border-gray-100"
                   aria-label="Toggle sidebar"
                 >
-                  <div className="rounded-full overflow-hidden h-8 w-8 bg-white flex items-center justify-center">
+                  <div className="rounded-full overflow-hidden h-7 w-7 bg-white flex items-center justify-center">
                     <Image
                       src={user?.picture || "/images/user_profile_placeholder.jpeg"}
                       alt={user ? `${user.first_name} ${user.last_name}` : "Profile"}
-                      width={32}
-                      height={32}
+                      width={28}
+                      height={28}
                       className="rounded-full object-cover"
                     />
                   </div>
@@ -192,16 +192,15 @@ const Navbar = () => {
           )}
 
           {/* Mobile Actions */}
-          <div className="lg:hidden flex items-center gap-0.5 sm:gap-1">
+          <div className="lg:hidden flex items-center gap-0">
             {user && (
               <>
-                {/* Search Icon (Mobile) - Always renders to reserve space, hidden on non-networking */}
+                {/* Search Icon (Mobile) */}
                 <button
                   onClick={() => setSearchOpen(!searchOpen)}
-                  className={`flex flex-col items-center gap-0 min-w-[36px] p-0.5 ${path === '/networking' ? '' : 'invisible'}`}
+                  className={`${path === '/networking' ? '' : 'invisible'}`}
                 >
-                  <FiSearch size={18} className="text-gray-700" />
-                  <span className="text-[8px] leading-tight text-gray-500 hidden">Search</span>
+                  <FiSearch size={16} className="text-gray-700 mx-1" />
                 </button>
                 <NavbarIconButton
                   mobile
@@ -385,13 +384,13 @@ export const NavbarIconButton = ({
   }) => (
     <button
       ref={ref}
-      className={`flex flex-col items-center justify-center gap-0.5 cursor-pointer group hover:text-black text-gray-500 ${
-        isMobile ? 'min-w-[44px] sm:min-w-[48px] p-1 sm:p-1.5' : 'min-w-[48px]'
+      className={`flex items-center justify-center cursor-pointer group hover:text-black text-gray-500 ${
+        isMobile ? 'min-w-[28px] p-0.5' : 'min-w-[48px] flex-col gap-0.5'
       }`}
       onClick={onClick}
     >
       <div className="relative">
-        <Icon size={20} className="group-hover:text-black transition-colors" />
+        <Icon size={isMobile ? 16 : 20} className="group-hover:text-black transition-colors" />
         {count ? (
           <span className={`absolute -top-1.5 -right-1.5 min-w-[16px] flex items-center justify-center ${badgeColor || 'bg-red-600'} text-white font-bold rounded-full px-1 leading-none ${
             isMobile ? 'h-[14px] text-[8px]' : 'h-4 text-[10px]'
@@ -400,33 +399,39 @@ export const NavbarIconButton = ({
           </span>
         ) : null}
       </div>
-      <span className={`leading-none ${
-        isMobile ? 'text-[10px] sm:text-[11px]' : 'text-[9px] sm:text-[10px] font-normal'
-      }`}>
-        {label}
-      </span>
+      {!isMobile && (
+        <span className={`leading-none ${
+          isMobile ? 'text-[10px] sm:text-[11px]' : 'text-[9px] sm:text-[10px] font-normal'
+        }`}>
+          {label}
+        </span>
+      )}
     </button>
   );
 
   return (
     <div className={`flex flex-row items-center ${mobile ? 'gap-0.5 sm:gap-1' : 'gap-2'}`}>
       {isEmployer && (
-        <NavItem
-          mobile={mobile}
-          icon={FiBriefcase}
-          label="Jobs"
-          onClick={() => router.push('/profile/find-candidates?tab=manage-jobs')}
-        />
+        <div className="max-[430px]:hidden">
+          <NavItem
+            mobile={mobile}
+            icon={FiBriefcase}
+            label="Jobs"
+            onClick={() => router.push('/profile/find-candidates?tab=manage-jobs')}
+          />
+        </div>
       )}
 
-      <NavItem
-        mobile={mobile}
-        icon={FiCalendar}
-        label="Meetings"
-        onClick={onMeetingsClick}
-        count={scheduledMeetingsCount > 0 ? scheduledMeetingsCount : undefined}
-        badgeColor="bg-yellow-500"
-      />
+      <div className="max-[430px]:hidden">
+        <NavItem
+          mobile={mobile}
+          icon={FiCalendar}
+          label="Meetings"
+          onClick={onMeetingsClick}
+          count={scheduledMeetingsCount > 0 ? scheduledMeetingsCount : undefined}
+          badgeColor="bg-yellow-500"
+        />
+      </div>
 
       <NavItem
         mobile={mobile}
