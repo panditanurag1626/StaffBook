@@ -23,28 +23,28 @@ const testimonials = [
         role: "Frontend Developer",
         type: "Job Seeker",
         text: "Direct recruiter connectivity and online status visibility made job searching faster and more transparent.",
-        image: "https://images.unsplash.com/photo-1605553100650-a88941763131?q=80&w=1000&auto=format&fit=crop"
+        image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop"
     },
     {
         name: "Rajeev Mehta",
         role: "HR Head, Visom6 Technology Pvt Ltd",
         type: "Employer",
         text: "Bulk hiring, smart shortlisting, and instant interview scheduling helped us fill positions significantly faster.",
-        image: "https://images.unsplash.com/photo-1579564177264-a6a3b6807ebc?q=80&w=1000&auto=format&fit=crop"
+        image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=1000&auto=format&fit=crop"
     },
     {
         name: "Ankit Jain",
         role: "Founder, Code Krafters",
         type: "Employer",
         text: "Candidate reels, stories, and professional activity gave us deeper insights than a traditional resume ever could.",
-        image: "https://images.unsplash.com/photo-1556157382-97eda2d62296?q=80&w=1000&auto=format&fit=crop"
+        image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop"
     },
     {
         name: "Vikram Agrawal",
         role: "Director – Strategy & Growth",
         type: "Employer",
         text: "For CXO hiring, StaffBook's professional history and behavioral visibility helped us make more informed leadership decisions.",
-        image: "https://images.unsplash.com/photo-1566492031516-f3e43276d126?q=80&w=1000&auto=format&fit=crop"
+        image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=1000&auto=format&fit=crop"
     }
 ];
 

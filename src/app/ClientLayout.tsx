@@ -12,13 +12,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const router = useRouter();
   const pathname = usePathname();
   const isMeetingPage = pathname?.startsWith("/meeting");
-  const isPreLogin = pathname === "/";
-  const isHomePage = pathname === "/home";
+  const isLandingPage = pathname === "/" || pathname === "/home";
 
   return (
     <>
-      {!isMeetingPage && !isHomePage && <Navbar />}
-      {isHomePage && (
+      {!isMeetingPage && !isLandingPage && <Navbar />}
+      {isLandingPage && (
         <div className="fixed top-0 right-0 z-50 p-4">
           <button
             onClick={() => router.push('/signin')}
@@ -28,13 +27,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </button>
         </div>
       )}
-      <main className={!isMeetingPage ? `min-h-screen ${!isPreLogin && !isHomePage ? 'pb-[80px] lg:pb-0' : ''}` : "h-screen"}>
+      <main className={!isMeetingPage ? `min-h-screen ${!isLandingPage ? 'pb-[80px] lg:pb-0' : ''}` : "h-screen"}>
         {children}
       </main>
       {!isMeetingPage && (
         <>
-          <Footer showMobile={isPreLogin || isHomePage} />
-          {!isPreLogin && !isHomePage && <MobileBottomNav />}
+          <Footer showMobile={isLandingPage} />
+          {!isLandingPage && <MobileBottomNav />}
           {user && <MessageWidget />}
         </>
       )}
