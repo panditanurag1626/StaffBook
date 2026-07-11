@@ -86,93 +86,117 @@ const Navbar = () => {
       <div className={`w-full h-[70px] fixed top-0 z-[100] ${path === '/' ? 'bg-transparent text-white' : 'bg-white'} border-x-0 border-y-0 rounded-none transition-all duration-300`}>
         <div className="w-full max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 lg:px-8">
 
-          {/* Left Side: Logo + Mobile profile toggle */}
-          <div className="flex items-center gap-0 lg:gap-3 lg:flex-1">
-            <div className="flex h-full items-center justify-center w-8 lg:w-10">
-              <Link href="/networking" className="cursor-pointer">
-                <Image
-                  src="/logoHalf.jpeg"
-                  alt="Staff Book"
-                  width={32}
-                  height={32}
-                  priority
-                  className="object-contain lg:w-10 lg:h-10"
-                />
-              </Link>
-            </div>
-            {path !== '/' && (
-              <div className="lg:hidden flex items-center">
-                <button
-                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="relative rounded-full shadow-sm hover:bg-gray-50 transition-all active:scale-95 border border-gray-100"
-                  aria-label="Toggle sidebar"
+          {/* Logo */}
+          <div className="flex h-full items-center justify-center w-8 lg:w-10 shrink-0">
+            <Link href="/networking" className="cursor-pointer">
+              <Image
+                src="/logoHalf.jpeg"
+                alt="Staff Book"
+                width={32}
+                height={32}
+                priority
+                className="object-contain lg:w-10 lg:h-10"
+              />
+            </Link>
+          </div>
+
+          {/* Mobile profile toggle */}
+          {path !== '/' && (
+            <div className="lg:hidden flex items-center shrink-0">
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="relative rounded-full shadow-sm hover:bg-gray-50 transition-all active:scale-95 border border-gray-100"
+                aria-label="Toggle sidebar"
+              >
+                <div className="rounded-full overflow-hidden h-7 w-7 bg-white flex items-center justify-center">
+                  <Image
+                    src={user?.picture || "/images/user_profile_placeholder.jpeg"}
+                    alt={user ? `${user.first_name} ${user.last_name}` : "Profile"}
+                    width={28}
+                    height={28}
+                    className="rounded-full object-cover"
+                  />
+                </div>
+              </button>
+              {!user && path === '/signin' && (
+                <Link
+                  href="/signup"
+                  className="font-semibold px-4 py-1.5 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl text-white bg-purple-700 hover:bg-purple-800 text-xs whitespace-nowrap"
                 >
-                  <div className="rounded-full overflow-hidden h-7 w-7 bg-white flex items-center justify-center">
-                    <Image
-                      src={user?.picture || "/images/user_profile_placeholder.jpeg"}
-                      alt={user ? `${user.first_name} ${user.last_name}` : "Profile"}
-                      width={28}
-                      height={28}
-                      className="rounded-full object-cover"
-                    />
-                  </div>
-                </button>
-                {!user && path === '/signin' && (
-                  <Link
-                    href="/signup"
-                    className="font-semibold px-4 py-1.5 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl text-white bg-purple-700 hover:bg-purple-800 text-xs whitespace-nowrap"
-                  >
-                    Sign Up
-                  </Link>
-                )}
-                {!user && path === '/signup' && (
-                  <Link
-                    href="/signin"
-                    className="font-semibold px-4 py-1.5 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl text-white bg-purple-700 hover:bg-purple-800 text-xs whitespace-nowrap"
-                  >
-                    Sign In
-                  </Link>
-                )}
-              </div>
-            )}
-            {/* Search Bar (Desktop) - Only on Networking pages */}
-            <div className="hidden lg:block w-[200px]">
-              {user && path === '/networking' && (
-                <NavbarSearch />
+                  Sign Up
+                </Link>
+              )}
+              {!user && path === '/signup' && (
+                <Link
+                  href="/signin"
+                  className="font-semibold px-4 py-1.5 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl text-white bg-purple-700 hover:bg-purple-800 text-xs whitespace-nowrap"
+                >
+                  Sign In
+                </Link>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Center: Nav Items */}
-          <div className="lg:flex-1 lg:min-w-0 overflow-x-auto scrollbar-hide">
-            {user && !['/signin', '/signup'].includes(path) ? (
-              <NavbarDesktop links={filteredLinks} currentPath={path} />
-            ) : (
-              path !== '/' && <NavbarDesktop links={navLinks} currentPath={path} onAuthClick={() => setIsAuthModalOpen(true)} />
+          {/* Desktop Search */}
+          <div className="hidden lg:block w-[200px] ml-3">
+            {user && path === '/networking' && (
+              <NavbarSearch />
             )}
           </div>
 
-          {/* Right Side: Icons + Profile / Auth Buttons */}
+          {/* Nav Items - left aligned right after logo */}
           {user && !['/signin', '/signup'].includes(path) ? (
-            <div className="hidden lg:flex items-center gap-2 lg:flex-1 lg:justify-end">
-              <div className="mr-6">
+            <div className="overflow-x-auto scrollbar-hide ml-1 lg:ml-4">
+              <NavbarDesktop links={filteredLinks} currentPath={path} />
+            </div>
+          ) : (
+            path !== '/' && (
+              <div className="overflow-x-auto scrollbar-hide ml-1 lg:ml-4">
+                <NavbarDesktop links={navLinks} currentPath={path} onAuthClick={() => setIsAuthModalOpen(true)} />
+              </div>
+            )
+          )}
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Right Icons + Auth */}
+          {user && !['/signin', '/signup'].includes(path) ? (
+            <>
+              <div className="hidden lg:flex items-center gap-2 shrink-0">
+                <div className="mr-6">
+                  <NavbarIconButton
+                    onNotificationsClick={() => setNotificationsOpen(true)}
+                    onMeetingsClick={() => {
+                      setIsModalFromNavbar(true);
+                      setMeetingModalOpen(true);
+                    }}
+                    bellButtonRef={bellButtonRef}
+                  />
+                </div>
+                <ProfileAvatar
+                  name={user ? `${user.first_name} ${user.last_name}` : 'User'}
+                  src={user?.picture || undefined}
+                  showMenu={true}
+                />
+              </div>
+              <div className="lg:hidden flex items-center gap-0 shrink-0">
+                <button
+                  onClick={() => setSearchOpen(!searchOpen)}
+                  className={`${path === '/networking' ? '' : 'invisible'}`}
+                >
+                  <FiSearch size={16} className="text-gray-700 mx-1" />
+                </button>
                 <NavbarIconButton
+                  mobile
                   onNotificationsClick={() => setNotificationsOpen(true)}
-                  onMeetingsClick={() => {
-                    setIsModalFromNavbar(true);
-                    setMeetingModalOpen(true);
-                  }}
+                  onMeetingsClick={() => { setIsModalFromNavbar(true); setMeetingModalOpen(true); }}
                   bellButtonRef={bellButtonRef}
                 />
               </div>
-              <ProfileAvatar
-                name={user ? `${user.first_name} ${user.last_name}` : 'User'}
-                src={user?.picture || undefined}
-                showMenu={true}
-              />
-            </div>
+            </>
           ) : (
-            <div className="hidden lg:flex items-center lg:flex-1 lg:justify-end">
+            <div className="flex items-center shrink-0">
               {path === '/signin' ? (
                 <Link
                   href="/signup"
@@ -191,34 +215,7 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* Mobile Actions */}
-          <div className="lg:hidden flex items-center gap-0">
-            {user && (
-              <>
-                {/* Search Icon (Mobile) */}
-                <button
-                  onClick={() => setSearchOpen(!searchOpen)}
-                  className={`${path === '/networking' ? '' : 'invisible'}`}
-                >
-                  <FiSearch size={16} className="text-gray-700 mx-1" />
-                </button>
-                <NavbarIconButton
-                  mobile
-                  onNotificationsClick={() => setNotificationsOpen(true)}
-                  onMeetingsClick={() => { setIsModalFromNavbar(true); setMeetingModalOpen(true); }}
-                  bellButtonRef={bellButtonRef}
-                />
-              </>
-            )}
-            {!user && path !== '/signin' && path !== '/signup' && (
-              <Link
-                href="/signin"
-                className="font-semibold px-5 py-2 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl text-white bg-purple-700 hover:bg-purple-800 text-sm"
-              >
-                Sign In
-              </Link>
-            )}
-          </div>
+
         </div>
 
         {/* Mobile Search Overlay */}
