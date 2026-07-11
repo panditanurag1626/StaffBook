@@ -86,59 +86,20 @@ const Navbar = () => {
       <div className={`w-full h-[70px] fixed top-0 z-[100] ${path === '/' ? 'bg-transparent text-white' : 'bg-white'} border-x-0 border-y-0 rounded-none transition-all duration-300`}>
         <div className="w-full max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 lg:px-8">
 
-          {/* Left Side: Logo + Search */}
+          {/* Left Side: Logo */}
           <div className="flex items-center gap-2 lg:gap-3 lg:flex-1">
-            <div className="flex flex-row gap-3 items-center">
-              {/* Logo Section */}
-              <div className="flex h-full items-center justify-center w-10">
-                <Link href="/networking" className="cursor-pointer">
-                  <Image
-                    src="/logoHalf.jpeg"
-                    alt="Staff Book"
-                    width={40}
-                    height={40}
-                    priority
-                    className="object-contain"
-                  />
-                </Link>
-              </div>
-              {path !== '/' && (
-                <div className="lg:hidden flex items-center z-50 gap-2">
-                  <button
-                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                    className="relative rounded-full shadow-sm hover:bg-gray-50 transition-all active:scale-95 border border-gray-100"
-                    aria-label="Toggle sidebar"
-                  >
-                    <div className="rounded-full overflow-hidden h-9 w-9 bg-white flex items-center justify-center">
-                      <Image
-                        src={user?.picture || "/images/user_profile_placeholder.jpeg"}
-                        alt={user ? `${user.first_name} ${user.last_name}` : "Profile"}
-                        width={36}
-                        height={36}
-                        className="rounded-full object-cover"
-                      />
-                    </div>
-                  </button>
-                  {!user && path === '/signin' && (
-                    <Link
-                      href="/signup"
-                      className="font-semibold px-4 py-1.5 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl text-white bg-purple-700 hover:bg-purple-800 text-xs whitespace-nowrap"
-                    >
-                      Sign Up
-                    </Link>
-                  )}
-                  {!user && path === '/signup' && (
-                    <Link
-                      href="/signin"
-                      className="font-semibold px-4 py-1.5 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl text-white bg-purple-700 hover:bg-purple-800 text-xs whitespace-nowrap"
-                    >
-                      Sign In
-                    </Link>
-                  )}
-                </div>
-              )}
+            <div className="flex h-full items-center justify-center w-10">
+              <Link href="/networking" className="cursor-pointer">
+                <Image
+                  src="/logoHalf.jpeg"
+                  alt="Staff Book"
+                  width={40}
+                  height={40}
+                  priority
+                  className="object-contain"
+                />
+              </Link>
             </div>
-
             {/* Search Bar (Desktop) - Only on Networking pages */}
             <div className="hidden lg:block w-[200px]">
               {user && path === '/networking' && (
@@ -199,6 +160,23 @@ const Navbar = () => {
           <div className="lg:hidden flex items-center gap-0.5 sm:gap-1">
             {user && (
               <>
+                {path !== '/' && (
+                  <button
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    className="relative rounded-full shadow-sm hover:bg-gray-50 transition-all active:scale-95 border border-gray-100"
+                    aria-label="Toggle sidebar"
+                  >
+                    <div className="rounded-full overflow-hidden h-9 w-9 bg-white flex items-center justify-center">
+                      <Image
+                        src={user?.picture || "/images/user_profile_placeholder.jpeg"}
+                        alt={user ? `${user.first_name} ${user.last_name}` : "Profile"}
+                        width={36}
+                        height={36}
+                        className="rounded-full object-cover"
+                      />
+                    </div>
+                  </button>
+                )}
                 {/* Search Icon (Mobile) - Always renders to reserve space, hidden on non-networking */}
                 <button
                   onClick={() => setSearchOpen(!searchOpen)}
