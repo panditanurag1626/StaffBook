@@ -193,22 +193,33 @@ export default function JobDetailPage() {
       if (isSuccess) {
         toast.success(data?.message || 'Contact unlocked');
         setShowContact(true);
-        const contactEmail = data?.data?.data?.email || data?.data?.email || job.user?.email || job.user?.employerDetails?.professional_email || '';
-        const contactPhone = data?.data?.data?.phone || data?.data?.phone || job.user?.phone || '';
+      }
+      // Show modal with whatever data we have from API or job object
+      const contactEmail = data?.data?.data?.email || data?.data?.email || job.user?.email || job.user?.employerDetails?.professional_email || '';
+      const contactPhone = data?.data?.data?.phone || data?.data?.phone || job.user?.phone || '';
+      setContactModalInfo({
+        isOpen: true,
+        email: contactEmail || 'Not available',
+        phone: contactPhone || 'Not available',
+        name: job.posted_by_name || job.company_name || 'Employer',
+        type: 'phone'
+      });
+    } catch (err: any) {
+      console.error('Show contact error:', err);
+      // Try showing data from job object even if API fails
+      const contactPhone = job?.user?.phone || '';
+      if (contactPhone) {
         setContactModalInfo({
           isOpen: true,
-          email: contactEmail || 'Not available',
-          phone: contactPhone || 'Not available',
-          name: job.posted_by_name || job.company_name || 'Employer',
+          email: job?.user?.email || job?.user?.employerDetails?.professional_email || '',
+          phone: contactPhone,
+          name: job?.posted_by_name || job?.company_name || 'Employer',
           type: 'phone'
         });
       } else {
-        throw new Error(data?.message || "Failed to reveal contact");
+        let errMsg = err?.response?.data?.data?.errors?.message?.[0] || err?.response?.data?.message || err.message || 'Failed to reveal contact';
+        toast.error(errMsg);
       }
-    } catch (err: any) {
-      console.error('Show contact error:', err);
-      let errMsg = err?.response?.data?.data?.errors?.message?.[0] || err?.response?.data?.message || err.message || 'Failed to reveal contact';
-      toast.error(errMsg);
     } finally {
       setShowContactLoading(false);
     }
@@ -234,21 +245,32 @@ export default function JobDetailPage() {
       if (isSuccess) {
         toast.success(data?.message || 'Email unlocked');
         setShowEmail(true);
-        const contactEmail = data?.data?.data?.email || data?.data?.email || job.user?.email || job.user?.employerDetails?.professional_email || '';
+      }
+      // Show modal with whatever data we have from API or job object
+      const contactEmail = data?.data?.data?.email || data?.data?.email || job.user?.email || job.user?.employerDetails?.professional_email || '';
+      setContactModalInfo({
+        isOpen: true,
+        email: contactEmail || 'Not available',
+        phone: job.user?.phone || 'Not available',
+        name: job.posted_by_name || job.company_name || 'Employer',
+        type: 'email'
+      });
+    } catch (err: any) {
+      console.error('Show email error:', err);
+      // Try showing data from job object even if API fails
+      const contactEmail = job?.user?.email || job?.user?.employerDetails?.professional_email || '';
+      if (contactEmail) {
         setContactModalInfo({
           isOpen: true,
-          email: contactEmail || 'Not available',
-          phone: job.user?.phone || 'Not available',
-          name: job.posted_by_name || job.company_name || 'Employer',
+          email: contactEmail,
+          phone: job?.user?.phone || '',
+          name: job?.posted_by_name || job?.company_name || 'Employer',
           type: 'email'
         });
       } else {
-        throw new Error(data?.message || "Failed to reveal email");
+        let errMsg = err?.response?.data?.data?.errors?.message?.[0] || err?.response?.data?.message || err.message || 'Failed to reveal email';
+        toast.error(errMsg);
       }
-    } catch (err: any) {
-      console.error('Show email error:', err);
-      let errMsg = err?.response?.data?.data?.errors?.message?.[0] || err?.response?.data?.message || err.message || 'Failed to reveal email';
-      toast.error(errMsg);
     } finally {
       setShowEmailLoading(false);
     }
@@ -588,6 +610,7 @@ export default function JobDetailPage() {
                       isLoading={showEmailLoading}
                       showLabelBelow
                       size="sm"
+                      isRevealed={showEmail}
                     />
                     <PlatformActionButton
                       icon={FiBookmark}
