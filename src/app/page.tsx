@@ -41,7 +41,7 @@ export default function RootPage() {
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[180px]" style={{ background: "rgba(196, 181, 253, 0.2)" }} />
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20">
-          <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
+          <div className="flex flex-col items-center text-center max-w-2xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
               <div className="inline-flex items-center gap-2 bg-white/50 backdrop-blur-sm border border-purple-200/50 rounded-full px-4 py-1.5 mb-6">
                 <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
@@ -51,7 +51,7 @@ export default function RootPage() {
                 <span className="text-[clamp(2rem,5vw,3.5rem)] block">Find the job that</span>
                 <span className="text-[clamp(2rem,5vw,3.5rem)] bg-gradient-to-r from-purple-700 via-fuchsia-600 to-purple-600 text-transparent bg-clip-text">fits your life</span>
               </h1>
-              <p className="text-base md:text-lg text-[#2d0a4e]/70 mt-5 max-w-xl mx-auto leading-relaxed">
+              <p className="text-base md:text-lg text-[#2d0a4e]/70 mt-5 max-w-md mx-auto leading-relaxed">
                 StaffBook connects job seekers and recruiters directly — no middlemen, no spam, just real opportunities near you.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">

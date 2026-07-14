@@ -332,4 +332,3 @@ const ResumeTemplates: React.FC = () => {
 };
 
 export default ResumeTemplates;
-
