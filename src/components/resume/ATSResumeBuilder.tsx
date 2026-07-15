@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
@@ -1015,18 +1015,25 @@ function LivePreview({
   const [html, setHtml] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  const loadedRef = useRef(false);
   const dataKey = JSON.stringify(groupedData);
 
   React.useEffect(() => {
+    if (loadedRef.current) return;
     let cancelled = false;
     setLoading(true);
-    setFailed(false);
     const handle = setTimeout(async () => {
       try {
         const raw = await fetchTemplateHtml(templateId, JSON.parse(dataKey));
-        if (!cancelled) setHtml(withResumeApiBase(raw));
+        if (!cancelled) {
+          setHtml(withResumeApiBase(raw));
+          loadedRef.current = true;
+        }
       } catch (err) {
-        if (!cancelled) setFailed(true);
+        if (!cancelled) {
+          setFailed(true);
+          loadedRef.current = true;
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
