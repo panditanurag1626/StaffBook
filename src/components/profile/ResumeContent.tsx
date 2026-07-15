@@ -360,13 +360,6 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
               )}
             </div>
           </div>
-
-          {/* Resume Templates Section */}
-          <div className={`${THEME.layout.spacing.xl} mt-12`}>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">Choose the Perfect Template for Your Resume</h3>
-            <p className="text-sm text-gray-500 mb-6">Pick a professional design to make your resume stand out</p>
-            <ResumeTemplates />
-          </div>
         </>
       )}
     </div>
