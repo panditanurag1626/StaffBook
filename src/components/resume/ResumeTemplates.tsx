@@ -150,7 +150,7 @@ const ResumeTemplates: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && templates.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4 text-center">
         <FiAlertCircle className="text-red-500" size={40} />

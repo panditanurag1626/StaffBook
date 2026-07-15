@@ -1037,6 +1037,16 @@ function LivePreview({
     };
   }, [dataKey, templateId]);
 
+  if (failed && !loading) {
+    return (
+      <div className="flex flex-col items-center justify-center text-center px-6 py-12 text-gray-400">
+        <FiAlertCircle size={28} className="text-gray-300 mb-2" />
+        <p className="text-sm font-medium text-gray-500">Template preview unavailable</p>
+        <p className="text-xs mt-1">Save your resume and try again later.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-full w-full overflow-hidden flex justify-center">
       {loading && (
@@ -1044,13 +1054,7 @@ function LivePreview({
           <FiLoader className="animate-spin text-purple-600" size={28} />
         </div>
       )}
-      {failed && !loading ? (
-        <div className="flex flex-col items-center justify-center text-center px-6 py-12 text-gray-500">
-          <FiAlertCircle size={28} className="text-red-400 mb-2" />
-          <p className="text-sm font-medium">Couldn&apos;t load the live preview.</p>
-          <p className="text-xs mt-1">Make sure the resume service is running.</p>
-        </div>
-      ) : (
+      {!failed && (
         <div
           className="origin-top"
           style={{ width: "1000px", height: "1414px", transform: `scale(${scale})`, flexShrink: 0 }}

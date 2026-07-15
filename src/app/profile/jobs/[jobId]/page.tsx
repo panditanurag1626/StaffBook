@@ -564,6 +564,7 @@ export default function JobDetailPage() {
                       isLoading={showEmailLoading}
                       showLabelBelow
                       size="sm"
+                      isRevealed={showEmail}
                     />
                     <PlatformActionButton
                       icon={FiBookmark}
