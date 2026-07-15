@@ -1045,13 +1045,7 @@ function LivePreview({
   }, [dataKey, templateId]);
 
   if (failed && !loading) {
-    return (
-      <div className="flex flex-col items-center justify-center text-center px-6 py-12 text-gray-400">
-        <FiAlertCircle size={28} className="text-gray-300 mb-2" />
-        <p className="text-sm font-medium text-gray-500">Template preview unavailable</p>
-        <p className="text-xs mt-1">Save your resume and try again later.</p>
-      </div>
-    );
+    return null;
   }
 
   return (
