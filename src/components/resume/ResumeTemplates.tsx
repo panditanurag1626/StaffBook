@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { resumeApiClient, templatePreviewUrl, printTemplate, downloadTemplatePdf } from '@/lib/api/resumeApi';
 import { THEME } from '../../styles/theme';
@@ -109,33 +109,37 @@ const ResumeTemplates: React.FC = () => {
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await resumeApiClient.get('/api/templates', {
-          params: { page: currentPage, limit: TEMPLATES_PER_PAGE },
-        });
-        const payload = response.data?.data;
-        if (payload && Array.isArray(payload.templates)) {
-          setTemplates(payload.templates);
-          setTotalCount(payload.total ?? payload.templates.length);
-          setTotalPages(payload.pages ?? 1);
-        } else {
-          throw new Error('Invalid response format');
-        }
-      } catch (err) {
-        console.error('Error fetching templates:', err);
-        setError('Failed to load templates. Please try again later.');
-      } finally {
-        setLoading(false);
+  const fetchTemplates = useCallback(async (retries = 2) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await resumeApiClient.get('/api/templates', {
+        params: { page: currentPage, limit: TEMPLATES_PER_PAGE },
+      });
+      const payload = response.data?.data;
+      if (payload && Array.isArray(payload.templates)) {
+        setTemplates(payload.templates);
+        setTotalCount(payload.total ?? payload.templates.length);
+        setTotalPages(payload.pages ?? 1);
+      } else {
+        throw new Error('Invalid response format');
       }
-    };
-
-    fetchTemplates();
-    // Refetch whenever the page changes (server-side pagination).
+    } catch (err: any) {
+      if (retries > 0 && err?.response?.status === 429) {
+        const delay = (3 - retries) * 2000;
+        await new Promise(r => setTimeout(r, delay));
+        return fetchTemplates(retries - 1);
+      }
+      console.error('Error fetching templates:', err);
+      setError('Failed to load templates. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   }, [currentPage]);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
 
   if (loading) {
     return (
@@ -249,7 +253,7 @@ const ResumeTemplates: React.FC = () => {
             noPadding
             onClick={() => handleTemplateSelect(template)}
           >
-            {/* Preview Section - Compact */}
+            {/* Preview Section - Compact (lazy loaded) */}
             <div className="relative h-[260px] w-full overflow-hidden bg-gray-50 border-b border-gray-100 flex justify-center">
               <div
                 className="origin-top"
@@ -260,12 +264,9 @@ const ResumeTemplates: React.FC = () => {
                   flexShrink: 0
                 }}
               >
-                <iframe
+                <LazyIframe
                   src={templatePreviewUrl(template.id)}
-                  style={{ width: "100%", height: "100%", border: 0 }}
                   title={`${template.name} Preview`}
-                  className="pointer-events-none"
-                  scrolling="no"
                 />
               </div>
 
@@ -330,5 +331,44 @@ const ResumeTemplates: React.FC = () => {
     </div>
   );
 };
+
+function LazyIframe({ src, title }: { src: string; title: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setLoaded(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} style={{ width: '100%', height: '100%' }}>
+      {loaded ? (
+        <iframe
+          src={src}
+          style={{ width: '100%', height: '100%', border: 0 }}
+          title={title}
+          className="pointer-events-none"
+          scrolling="no"
+        />
+      ) : (
+        <div className="flex items-center justify-center h-full">
+          <FiLoader className="animate-spin text-purple-400" size={20} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default ResumeTemplates;

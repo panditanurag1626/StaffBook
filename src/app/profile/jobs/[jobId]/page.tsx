@@ -61,13 +61,6 @@ export default function JobDetailPage() {
   const [showContactLoading, setShowContactLoading] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [showEmailLoading, setShowEmailLoading] = useState(false);
-  const [contactModalInfo, setContactModalInfo] = useState<{ isOpen: boolean; email: string; phone: string; name: string; type: 'email' | 'phone' | null }>({
-    isOpen: false,
-    email: '',
-    phone: '',
-    name: '',
-    type: null
-  });
   const router = useRouter();
 
   useEffect(() => {
@@ -193,33 +186,13 @@ export default function JobDetailPage() {
       if (isSuccess) {
         toast.success(data?.message || 'Contact unlocked');
         setShowContact(true);
+      } else {
+        throw new Error(data?.message || "Failed to reveal contact");
       }
-      // Show modal with whatever data we have from API or job object
-      const contactEmail = data?.data?.data?.email || data?.data?.email || job.user?.email || job.user?.employerDetails?.professional_email || '';
-      const contactPhone = data?.data?.data?.phone || data?.data?.phone || job.user?.phone || '';
-      setContactModalInfo({
-        isOpen: true,
-        email: contactEmail || 'Not available',
-        phone: contactPhone || 'Not available',
-        name: job.posted_by_name || job.company_name || 'Employer',
-        type: 'phone'
-      });
     } catch (err: any) {
       console.error('Show contact error:', err);
-      // Try showing data from job object even if API fails
-      const contactPhone = job?.user?.phone || '';
-      if (contactPhone) {
-        setContactModalInfo({
-          isOpen: true,
-          email: job?.user?.email || job?.user?.employerDetails?.professional_email || '',
-          phone: contactPhone,
-          name: job?.posted_by_name || job?.company_name || 'Employer',
-          type: 'phone'
-        });
-      } else {
-        let errMsg = err?.response?.data?.data?.errors?.message?.[0] || err?.response?.data?.message || err.message || 'Failed to reveal contact';
-        toast.error(errMsg);
-      }
+      let errMsg = err?.response?.data?.data?.errors?.message?.[0] || err?.response?.data?.message || err.message || 'Failed to reveal contact';
+      toast.error(errMsg);
     } finally {
       setShowContactLoading(false);
     }
@@ -245,32 +218,13 @@ export default function JobDetailPage() {
       if (isSuccess) {
         toast.success(data?.message || 'Email unlocked');
         setShowEmail(true);
+      } else {
+        throw new Error(data?.message || "Failed to reveal email");
       }
-      // Show modal with whatever data we have from API or job object
-      const contactEmail = data?.data?.data?.email || data?.data?.email || job.user?.email || job.user?.employerDetails?.professional_email || '';
-      setContactModalInfo({
-        isOpen: true,
-        email: contactEmail || 'Not available',
-        phone: job.user?.phone || 'Not available',
-        name: job.posted_by_name || job.company_name || 'Employer',
-        type: 'email'
-      });
     } catch (err: any) {
       console.error('Show email error:', err);
-      // Try showing data from job object even if API fails
-      const contactEmail = job?.user?.email || job?.user?.employerDetails?.professional_email || '';
-      if (contactEmail) {
-        setContactModalInfo({
-          isOpen: true,
-          email: contactEmail,
-          phone: job?.user?.phone || '',
-          name: job?.posted_by_name || job?.company_name || 'Employer',
-          type: 'email'
-        });
-      } else {
-        let errMsg = err?.response?.data?.data?.errors?.message?.[0] || err?.response?.data?.message || err.message || 'Failed to reveal email';
-        toast.error(errMsg);
-      }
+      let errMsg = err?.response?.data?.data?.errors?.message?.[0] || err?.response?.data?.message || err.message || 'Failed to reveal email';
+      toast.error(errMsg);
     } finally {
       setShowEmailLoading(false);
     }
@@ -610,7 +564,6 @@ export default function JobDetailPage() {
                       isLoading={showEmailLoading}
                       showLabelBelow
                       size="sm"
-                      isRevealed={showEmail}
                     />
                     <PlatformActionButton
                       icon={FiBookmark}
@@ -657,35 +610,6 @@ export default function JobDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* Contact Info Modal */}
-      {contactModalInfo.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setContactModalInfo(prev => ({ ...prev, isOpen: false }))}>
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl overflow-hidden p-6 flex flex-col items-center gap-4" onClick={(e) => e.stopPropagation()}>
-            <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mb-2">
-              {contactModalInfo.type === 'email' ? <FiMail size={32} /> : <FiPhone size={32} />}
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 text-center">{contactModalInfo.name}</h3>
-            <div className="w-full space-y-3 mt-2">
-              {contactModalInfo.type === 'email' && (
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                  <FiMail className="text-gray-500 flex-shrink-0" size={20} />
-                  <span className="text-sm font-medium text-gray-800 break-all">{contactModalInfo.email}</span>
-                </div>
-              )}
-              {contactModalInfo.type === 'phone' && (
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                  <FiPhone className="text-gray-500 flex-shrink-0" size={20} />
-                  <span className="text-sm font-medium text-gray-800">{contactModalInfo.phone}</span>
-                </div>
-              )}
-            </div>
-            <button onClick={() => setContactModalInfo(prev => ({ ...prev, isOpen: false }))} className="mt-4 w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-colors">
-              Close
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Share Modal */}
       {showShareModal && (
