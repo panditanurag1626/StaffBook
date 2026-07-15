@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { FiArrowLeft, FiLoader, FiFileText, FiStar, FiExternalLink } from "react-icons/fi";
+import { FiArrowLeft, FiLoader, FiFileText, FiStar } from "react-icons/fi";
 import apiClient from "@/lib/api/config";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -295,31 +295,13 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
       {activeTab === "versions" && (
         <>
           <div className={`space-y-8 p-4 md:p-6 ${THEME.layout.spacing.xl}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div onClick={() => handleTabChange("builder")} className="cursor-pointer">
                 <CreateResumeCard />
               </div>
               <div className="cursor-pointer">
                 <UploadResumeCard onClick={() => handleTabChange("uploadBuilder")} />
               </div>
-              <a
-                href="https://resume-pro-ebon.vercel.app/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                <div className="bg-white rounded-2xl border-2 border-dashed border-purple-300 hover:border-purple-500 hover:shadow-lg transition-all p-5 h-full flex flex-col items-center justify-center text-center min-h-[160px] group">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center mb-3 shadow-md">
-                    <FiExternalLink className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-sm font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
-                    AI Resume Builder
-                  </h3>
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    Build with AI on resume-pro
-                  </p>
-                </div>
-              </a>
             </div>
 
             {/* My Resume Folder */}
