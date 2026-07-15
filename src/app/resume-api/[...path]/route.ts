@@ -85,15 +85,12 @@ export async function POST(request: NextRequest) {
   }
 
   if (path === "upload-resume") {
-    const formData = await request.formData().catch(() => null);
-    const file = formData?.get("file") as File | null;
-    const fileName = file?.name?.replace(/\.(pdf|docx)$/i, "") || "Uploaded Resume";
     const uploadId = "local_" + Date.now();
     return NextResponse.json({
       status: 200, message: "Resume parsed successfully (offline mode)",
       upload_id: uploadId,
       data: {
-        basics: { name: fileName, email: "", phone: "", summary: "" },
+        basics: { name: "My Resume", email: "", phone: "", summary: "" },
         work: [],
         education: [],
         skills: [],
