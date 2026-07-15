@@ -32,18 +32,12 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
-    const rules = [
+    return [
       {
         source: '/api/proxy/:path*',
         destination: 'https://admin.staffbook.in/api/web/v1/:path*',
       },
     ];
-    // Forward ALL resume-api requests to Vercel-hosted resume API
-    rules.push({
-      source: '/resume-api/:path*',
-      destination: 'https://resume-pro-ebon.vercel.app/:path*',
-    });
-    return rules;
   },
 };
 
