@@ -1594,49 +1594,92 @@ function CertificationsForm({ resumeData, setResumeData, onFocus, onBlur }: any)
 }
 
 function ResumePreview({ data }: { data: ResumeData }) {
+  const rawData = (() => {
+    try {
+      const raw = localStorage.getItem('rawResumeData_' + new URLSearchParams(window.location.search).get('upload_id'));
+      return raw ? JSON.parse(raw)?.data : null;
+    } catch { return null; }
+  })();
+
+  const p = data.personalInfo;
+  const designation = data.experience[0]?.title || rawData?.work_experience?.[0]?.job_title || '';
+
   return (
-    <div className="space-y-6 font-serif max-w-[210mm] mx-auto">
+    <div className="space-y-3 font-sans max-w-[210mm] mx-auto text-xs leading-relaxed">
       {/* Header */}
-      <div className="text-center border-b-2 border-gray-800 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900 uppercase tracking-wide mb-2">
-          {data.personalInfo.fullName || "Your Name"}
-        </h1>
-        <div className="text-sm text-gray-600 flex flex-wrap justify-center gap-3">
-          {data.personalInfo.email && <span>{data.personalInfo.email}</span>}
-          {data.personalInfo.phone && <span>• {data.personalInfo.phone}</span>}
-          {data.personalInfo.location && <span>• {data.personalInfo.location}</span>}
-          {data.personalInfo.linkedin && <span>• LinkedIn</span>}
-          {data.personalInfo.portfolio && <span>• Portfolio</span>}
+      <div className="text-center border-b-2 border-gray-900 pb-3">
+        <h1 className="text-xl font-bold text-gray-900">{p.fullName || ''}</h1>
+        {designation && <p className="text-sm text-gray-700 font-medium mt-0.5">{designation}</p>}
+        <div className="text-[11px] text-gray-600 mt-1 space-y-0.5">
+          {p.email && <div>{p.email}</div>}
+          {p.phone && <div>{p.phone}</div>}
+          {p.location && <div>{p.location}</div>}
+          {p.portfolio && <div>https://{p.portfolio.replace(/^https?:\/\//, '')}</div>}
+          {p.linkedin && <div>LinkedIn: {p.linkedin.replace(/^https?:\/\//, '')}</div>}
+          {rawData?.additional_info?.github_url && <div>GitHub: {rawData.additional_info.github_url.replace(/^https?:\/\//, '')}</div>}
         </div>
       </div>
 
-      {/* Summary */}
+      {/* Profile */}
       {data.summary && (
-        <div className="space-y-2">
-          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-300 pb-1 uppercase">Professional Summary</h2>
-          <p className="text-sm text-gray-700 leading-relaxed text-justify">{data.summary}</p>
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">Profile</h2>
+          <p className="text-gray-700 text-justify">{data.summary}</p>
         </div>
       )}
 
       {/* Experience */}
       {data.experience.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-300 pb-1 uppercase">Work Experience</h2>
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">Experience</h2>
           {data.experience.map((exp) => (
-            <div key={exp.id} className="space-y-1">
+            <div key={exp.id} className="mb-1.5">
               <div className="flex justify-between items-baseline">
-                <h3 className="text-sm font-bold text-gray-800">{exp.title}</h3>
-                <span className="text-xs text-gray-600 italic">
-                  {exp.startDate} - {exp.current ? "Present" : exp.endDate}
-                </span>
+                <span className="text-xs font-semibold text-gray-800">{exp.title}</span>
+                <span className="text-[10px] text-gray-500">{exp.startDate} – {exp.current ? 'Present' : exp.endDate}</span>
               </div>
-              <div className="flex justify-between items-baseline mb-1">
-                <span className="text-sm font-semibold text-gray-700">{exp.company}</span>
-                <span className="text-xs text-gray-600">{exp.location}</span>
+              <div className="text-[11px] text-gray-600">{exp.company}</div>
+              <div className="text-gray-700 mt-0.5">{exp.description}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Projects */}
+      {rawData?.projects?.length > 0 && (
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">Projects</h2>
+          {rawData.projects.map((proj: any, idx: number) => (
+            <div key={idx} className="mb-1.5">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs font-semibold text-gray-800">{proj.name || proj.title}</span>
+                <span className="text-[10px] text-gray-500">{proj.start_date} – {proj.end_date || 'Present'}</span>
               </div>
-              <p className="text-sm text-gray-700 whitespace-pre-line pl-4 border-l-2 border-gray-100">
-                {exp.description}
-              </p>
+              <div className="text-gray-700 mt-0.5">{proj.description}</div>
+              {proj.highlights?.length > 0 && proj.highlights.map((h: string, i: number) => (
+                <div key={i} className="text-gray-600 text-[11px] ml-2">– {h}</div>
+              ))}
+              {proj.url && <div className="text-blue-600 text-[11px]">{proj.url}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Volunteer */}
+      {rawData?.volunteer?.length > 0 && (
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">Volunteer</h2>
+          {rawData.volunteer.map((v: any, idx: number) => (
+            <div key={idx} className="mb-1.5">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs font-semibold text-gray-800">{v.position}</span>
+                <span className="text-[10px] text-gray-500">{v.start_date} – {v.end_date || 'Present'}</span>
+              </div>
+              <div className="text-[11px] text-gray-600">{v.organization}</div>
+              <div className="text-gray-700 mt-0.5">{v.summary || v.description}</div>
+              {v.highlights?.length > 0 && v.highlights.map((h: string, i: number) => (
+                <div key={i} className="text-gray-600 text-[11px] ml-2">– {h}</div>
+              ))}
             </div>
           ))}
         </div>
@@ -1644,34 +1687,17 @@ function ResumePreview({ data }: { data: ResumeData }) {
 
       {/* Education */}
       {data.education.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-300 pb-1 uppercase">Education</h2>
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">Education</h2>
           {data.education.map((edu) => (
-            <div key={edu.id} className="space-y-1">
-              <div className="flex justify-between items-baseline">
-                <h3 className="text-sm font-bold text-gray-800">{edu.degree}</h3>
-                <span className="text-xs text-gray-600 italic">{edu.graduationDate}</span>
-              </div>
-              <div className="flex justify-between items-baseline">
-                <span className="text-sm font-semibold text-gray-700">{edu.institution}</span>
-                {edu.gpa && <span className="text-xs text-gray-600">GPA: {edu.gpa}</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Certifications */}
-      {data.certifications.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-300 pb-1 uppercase">Certifications</h2>
-          {data.certifications.map((cert) => (
-            <div key={cert.id} className="space-y-1">
-              <div className="flex justify-between items-baseline">
-                <h3 className="text-sm font-bold text-gray-800">{cert.name}</h3>
-                <span className="text-xs text-gray-600 italic">{cert.date}</span>
-              </div>
-              <p className="text-sm text-gray-700">{cert.issuer}</p>
+            <div key={edu.id} className="mb-1.5">
+              <div className="text-xs font-semibold text-gray-800">{edu.degree}</div>
+              <div className="text-[11px] text-gray-600">{edu.institution}</div>
+              <div className="text-[10px] text-gray-500">{edu.graduationDate}</div>
+              {edu.gpa && <div className="text-[11px] text-gray-600">Score: {edu.gpa}</div>}
+              {rawData?.education?.find((e: any) => e.institution === edu.institution)?.courses?.length > 0 && (
+                <div className="text-[11px] text-gray-600">Courses: {rawData.education.find((e: any) => e.institution === edu.institution).courses.join(' · ')}</div>
+              )}
             </div>
           ))}
         </div>
@@ -1679,20 +1705,98 @@ function ResumePreview({ data }: { data: ResumeData }) {
 
       {/* Skills */}
       {data.skills.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-300 pb-1 uppercase">Skills</h2>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700">
-            {data.skills.map((skill, idx) => (
-              <span key={idx} className="bg-gray-50 px-2 py-0.5 rounded text-xs border border-gray-100">{skill}</span>
-            ))}
-          </div>
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">Skills</h2>
+          {rawData?.skills?.length > 0 ? rawData.skills.map((s: any, idx: number) => (
+            <div key={idx} className="mb-1">
+              {typeof s === 'string' ? (
+                <div className="text-gray-800 text-xs">{s}</div>
+              ) : (
+                <div>
+                  <div className="text-gray-800 text-xs font-medium">{s.name}</div>
+                  {s.keywords?.length > 0 && (
+                    <div className="text-gray-600 text-[11px] ml-2">{s.keywords.join(' · ')}</div>
+                  )}
+                </div>
+              )}
+            </div>
+          )) : (
+            <div className="flex flex-wrap gap-1">
+              {data.skills.map((skill, idx) => (
+                <span key={idx} className="text-gray-700">{skill}{idx < data.skills.length - 1 ? '' : ''}</span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Watermark Footer */}
-      <div className="text-center pt-4 border-t border-gray-100">
-        <p className="text-[10px] text-gray-400 tracking-wider">Created with StaffBook</p>
-      </div>
+      {/* Languages */}
+      {rawData?.languages?.length > 0 && (
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">Languages</h2>
+          {rawData.languages.map((lang: any, idx: number) => (
+            <div key={idx} className="text-gray-700 text-xs">{lang.language || lang} — {lang.fluency || 'Native speaker'}</div>
+          ))}
+        </div>
+      )}
+
+      {/* Certificates */}
+      {data.certifications.length > 0 && (
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">Certificates</h2>
+          {data.certifications.map((cert) => (
+            <div key={cert.id} className="text-gray-700 text-xs">{cert.name} — {cert.issuer} ({cert.date})</div>
+          ))}
+        </div>
+      )}
+
+      {/* Awards */}
+      {rawData?.awards?.length > 0 && (
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">Awards</h2>
+          {rawData.awards.map((a: any, idx: number) => (
+            <div key={idx} className="mb-1">
+              <div className="text-gray-800 text-xs font-medium">{a.title} — {a.awarder} ({a.date})</div>
+              {a.summary && <div className="text-gray-600 text-[11px]">{a.summary}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Publications */}
+      {rawData?.publications?.length > 0 && (
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">Publications</h2>
+          {rawData.publications.map((pub: any, idx: number) => (
+            <div key={idx} className="mb-1">
+              <div className="text-gray-800 text-xs font-medium">{pub.name} — {pub.publisher} ({pub.release_date})</div>
+              {pub.summary && <div className="text-gray-600 text-[11px]">{pub.summary}</div>}
+              {pub.url && <div className="text-blue-600 text-[11px]">{pub.url}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Interests */}
+      {rawData?.interests?.length > 0 && (
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">Interests</h2>
+          <div className="text-gray-700 text-xs">{rawData.interests.map((i: any) => i.name || i).join(', ')}</div>
+        </div>
+      )}
+
+      {/* References */}
+      {rawData?.references?.length > 0 && (
+        <div>
+          <h2 className="text-xs font-bold text-gray-900 border-b border-gray-300 pb-0.5 mb-1">References</h2>
+          {rawData.references.map((ref: any, idx: number) => (
+            <div key={idx} className="mb-1">
+              <div className="text-gray-800 text-xs font-medium">{ref.name}</div>
+              {ref.reference && <div className="text-gray-600 text-[11px]">{ref.reference}</div>}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
