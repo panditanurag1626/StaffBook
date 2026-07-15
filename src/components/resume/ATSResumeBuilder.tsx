@@ -340,20 +340,33 @@ export default function ATSResumeBuilder() {
   // Falls back to downloading the PDF if the popup is blocked.
   const handleViewFullscreen = async () => {
     if (!templateId) {
-      toast.error("Template preview is unavailable right now. Save your resume and try again.");
+      openResumeWindow();
       return;
     }
     try {
       const html = await fetchTemplateHtml(templateId, getGroupedData());
       if (!openHtmlWindow(html)) {
-        toast("Pop-up blocked — downloading PDF instead.", { icon: "📄" });
-        await handleDownloadPdf();
+        toast("Pop-up blocked.", { icon: "📄" });
       }
     } catch (err) {
       console.error("Preview error:", err);
-      toast("Couldn't open preview — downloading PDF instead.", { icon: "📄" });
-      await handleDownloadPdf();
+      openResumeWindow();
     }
+  };
+
+  const openResumeWindow = () => {
+    const p = resumeData.personalInfo;
+    const win = window.open('', '_blank');
+    if (!win) { toast.error("Pop-up blocked"); return; }
+    const sectionHtml = (label: string, content: string) => content ? `<div style="margin-bottom:14px"><h2 style="font-size:13px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #7c3aed;padding-bottom:4px;margin-bottom:6px">${label}</h2>${content}</div>` : '';
+    const contactHtml = [p.email, p.phone, p.location].filter(Boolean).join(' &nbsp;|&nbsp; ');
+    const summaryHtml = resumeData.summary ? `<p style="font-size:13px;color:#4b5563;line-height:1.6;margin:0">${resumeData.summary}</p>` : '';
+    const expHtml = resumeData.experience.map(e => `<div style="margin-bottom:8px"><div style="font-weight:600;font-size:13px;color:#111827">${e.title}</div><div style="color:#6b7280;font-size:12px">${[e.company, `${e.startDate} – ${e.current ? 'Present' : e.endDate}`].filter(Boolean).join(' · ')}</div><div style="font-size:12px;color:#4b5563;margin-top:2px;line-height:1.5">${e.description}</div></div>`).join('');
+    const eduHtml = resumeData.education.map(e => `<div style="margin-bottom:4px"><div style="font-weight:600;font-size:13px;color:#111827">${e.degree}</div><div style="color:#6b7280;font-size:12px">${[e.institution, e.graduationDate].filter(Boolean).join(' · ')}${e.gpa ? ` · <span style="font-weight:500">GPA: ${e.gpa}</span>` : ''}</div></div>`).join('');
+    const skillsHtml = resumeData.skills.length ? resumeData.skills.join(' &middot; ') : '';
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${p.fullName || 'Resume'} - Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Segoe UI,sans-serif;background:#f3f4f6;display:flex;justify-content:center;padding:40px 16px}.page{max-width:800px;width:100%;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:40px 48px;border-radius:4px}.header{margin-bottom:20px}.header h1{font-size:26px;font-weight:700;color:#111827;margin:0;line-height:1.2}.header .title{font-size:14px;color:#6b7280;margin-top:2px}.header .contact{font-size:13px;color:#6b7280;margin-top:4px}</style></head><body><div class="page"><div class="header"><h1>${p.fullName || 'Resume'}</h1>${resumeData.experience[0]?.title ? `<div class="title">${resumeData.experience[0].title}</div>` : ''}${contactHtml ? `<div class="contact">${contactHtml}</div>` : ''}</div>${sectionHtml('Professional Summary', summaryHtml)}${sectionHtml('Experience', expHtml)}${sectionHtml('Education', eduHtml)}${sectionHtml('Skills', skillsHtml)}</div></body></html>`;
+    win.document.write(html);
+    win.document.close();
   };
 
   // Calculate ATS Score
@@ -622,7 +635,14 @@ export default function ATSResumeBuilder() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={openResumeWindow}
+          className="px-4 py-2.5 text-sm font-semibold flex items-center gap-2 bg-white border border-purple-300 text-purple-700 rounded-xl hover:bg-purple-50 transition-colors shadow-sm"
+        >
+          <FiEye size={18} />
+          Open Resume
+        </button>
         <button
           onClick={handleSave}
           disabled={isSaving}
@@ -870,8 +890,8 @@ export default function ATSResumeBuilder() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleViewFullscreen}
-                    title="Open full-size preview"
-                    className={`p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors ${!templateId ? 'opacity-50' : ''}`}
+                    title="View resume"
+                    className="p-2 rounded-lg text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-colors"
                   >
                     <FiEye size={18} />
                   </button>
@@ -1042,8 +1062,8 @@ function LivePreview({
     };
   }, [dataKey, templateId]);
 
-  if (failed && !loading) {
-    return null;
+  if ((failed && !loading) || process.env.NODE_ENV === 'development') {
+    return <FallbackPreview groupedData={groupedData} scale={scale} />;
   }
 
   return (
@@ -1066,6 +1086,34 @@ function LivePreview({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function FallbackPreview({ groupedData, scale }: { groupedData: any; scale: number }) {
+  const data = groupedData?.data || groupedData;
+  const p = data?.personalInfo || {};
+  const sections: string[] = [];
+  sections.push(`<table style="width:100%;border-collapse:collapse"><tr><td style="width:70%"><h1 style="font-size:20px;font-weight:700;margin:0">${p.fullName || 'Resume'}</h1><div style="color:#555;font-size:12px;margin:2px 0">${data?.experience?.[0]?.title || ''}</div><div style="color:#888;font-size:11px;margin:2px 0">${[p.email, p.phone, p.location].filter(Boolean).join(' | ')}</div></td><td style="width:30%;text-align:right;vertical-align:top;font-size:11px;color:#888">${[p.linkedin, p.portfolio].filter(Boolean).join('<br>')}</td></tr></table>`);
+  sections.push(`<hr style="border:none;border-top:2px solid #7c3aed;margin:8px 0">`);
+  if (data?.summary) sections.push(`<h2 style="font-size:13px;font-weight:600;margin:8px 0 4px;color:#333">Professional Summary</h2><p style="font-size:11px;color:#555;line-height:1.5;margin:0">${data.summary}</p>`);
+  if (data?.experience?.length) {
+    sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Experience</h2>`);
+    data.experience.forEach((e: any) => sections.push(`<div style="margin:4px 0"><div style="font-weight:600;font-size:12px">${e.title || ''}${e.company ? ' <span style="font-weight:400;color:#666">at '+e.company+'</span>' : ''}</div><div style="color:#888;font-size:10px">${[e.startDate, e.current ? 'Present' : e.endDate].filter(Boolean).join(' – ')}${e.location ? ' · '+e.location : ''}</div><div style="font-size:11px;color:#444;margin:2px 0">${e.description || ''}</div></div>`));
+  }
+  if (data?.education?.length) {
+    sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Education</h2>`);
+    data.education.forEach((e: any) => sections.push(`<div style="margin:4px 0"><div style="font-weight:600;font-size:12px">${e.degree || ''}${e.institution ? ' — '+e.institution : ''}</div><div style="color:#888;font-size:10px">${[e.graduationDate, e.gpa ? 'GPA: '+e.gpa : ''].filter(Boolean).join(' · ')}</div></div>`));
+  }
+  if (data?.skills?.length) sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Skills</h2><div style="font-size:11px;color:#444">${Array.isArray(data.skills) ? data.skills.map((s:any) => s.name || s).join(' · ') : ''}</div>`);
+  if (data?.certifications?.length) {
+    sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Certifications</h2>`);
+    data.certifications.forEach((c: any) => sections.push(`<div style="font-size:11px;margin:2px 0"><strong>${c.name || ''}</strong>${c.issuer ? ' — '+c.issuer : ''}${c.date ? ' · '+c.date : ''}</div>`));
+  }
+  const innerHtml = sections.join('');
+  return (
+    <div className="origin-top flex justify-center" style={{ width: "1000px", transform: `scale(${scale})`, flexShrink: 0, transformOrigin: 'top' }}>
+      <div style={{ fontFamily: 'Inter, sans-serif', width: '800px', padding: '24px 32px', color: '#222', lineHeight: '1.5', background: '#fff' }} dangerouslySetInnerHTML={{ __html: innerHtml }} />
     </div>
   );
 }

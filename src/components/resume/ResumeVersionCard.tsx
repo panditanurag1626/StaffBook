@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiFileText, FiCalendar, FiEdit3, FiTrash2, FiDownload } from 'react-icons/fi';
+import { FiFileText, FiCalendar, FiEdit3, FiTrash2, FiDownload, FiEye } from 'react-icons/fi';
 
 interface ResumeVersion {
   id: string;
@@ -17,6 +17,7 @@ interface ResumeVersionCardProps {
   resume: ResumeVersion;
   onEdit?: () => void;
   onDelete?: () => void;
+  onView?: () => void;
 }
 
 function getScoreColor(score: number): string {
@@ -25,7 +26,7 @@ function getScoreColor(score: number): string {
   return 'text-red-700 bg-red-50 border-red-200';
 }
 
-const ResumeVersionCard: React.FC<ResumeVersionCardProps> = ({ resume, onEdit, onDelete }) => {
+const ResumeVersionCard: React.FC<ResumeVersionCardProps> = ({ resume, onEdit, onDelete, onView }) => {
   return (
     <div className="bg-white rounded-xl border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all duration-200 group flex flex-col">
       <div className="p-4 flex-1 flex flex-col items-center text-center gap-2">
@@ -53,8 +54,15 @@ const ResumeVersionCard: React.FC<ResumeVersionCardProps> = ({ resume, onEdit, o
 
       <div className="flex border-t border-gray-100 divide-x divide-gray-100">
         <button
+          onClick={onView}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-gray-500 hover:text-purple-600 hover:bg-purple-50 transition-colors"
+        >
+          <FiEye size={14} />
+          View
+        </button>
+        <button
           onClick={onEdit}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-gray-500 hover:text-purple-600 hover:bg-purple-50 transition-colors rounded-bl-xl"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-gray-500 hover:text-purple-600 hover:bg-purple-50 transition-colors"
         >
           <FiEdit3 size={14} />
           Edit

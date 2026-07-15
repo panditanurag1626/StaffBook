@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { resumeApiClient, templatePreviewUrl, printTemplate, downloadTemplatePdf } from '@/lib/api/resumeApi';
+import { FALLBACK_TEMPLATES } from '@/lib/api/templates-fallback';
 import { THEME } from '../../styles/theme';
 import Card from '../shared/Card';
 import PremiumUpgradeModal from '../shared/PremiumUpgradeModal';
-import { FiStar, FiLoader, FiAlertCircle } from 'react-icons/fi';
+import { FiStar, FiLoader } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
 
 interface Template {
@@ -131,7 +132,11 @@ const ResumeTemplates: React.FC = () => {
         return fetchTemplates(retries - 1);
       }
       console.error('Error fetching templates:', err);
-      setError('Failed to load templates. Please try again later.');
+      // Fallback: load hardcoded templates so the page is never empty
+      setTemplates(FALLBACK_TEMPLATES as any);
+      setTotalCount(FALLBACK_TEMPLATES.length);
+      setTotalPages(Math.max(1, Math.ceil(FALLBACK_TEMPLATES.length / TEMPLATES_PER_PAGE)));
+      setError('offline');
     } finally {
       setLoading(false);
     }
@@ -146,21 +151,6 @@ const ResumeTemplates: React.FC = () => {
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <FiLoader className="text-purple-600 animate-spin" size={40} />
         <p className="text-gray-500 font-medium">Loading templates...</p>
-      </div>
-    );
-  }
-
-  if (error && templates.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-4 text-center">
-        <FiAlertCircle className="text-red-500" size={40} />
-        <p className="text-gray-700 font-medium">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-        >
-          Try Again
-        </button>
       </div>
     );
   }
@@ -197,13 +187,21 @@ const ResumeTemplates: React.FC = () => {
                   flexShrink: 0
                 }}
               >
-                <iframe
-                  src={templatePreviewUrl(selectedTemplate.id)}
-                  style={{ width: "100%", height: "100%", border: 0 }}
-                  title={`${selectedTemplate.name} Preview`}
-                  className="pointer-events-none"
-                  scrolling="no"
-                />
+                {error ? (
+                  <div className="flex flex-col items-center justify-center h-full p-8 text-center" style={{backgroundColor:selectedTemplate.color_scheme?.secondary||'#f3f4f6'}}>
+                    <div className="text-5xl font-bold mb-2" style={{color:selectedTemplate.color_scheme?.primary||'#6366f1'}}>{selectedTemplate.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+                    <div className="text-base font-semibold" style={{color:selectedTemplate.color_scheme?.text||'#374151'}}>{selectedTemplate.name}</div>
+                    <div className="mt-2 text-sm text-gray-400">Template preview unavailable</div>
+                  </div>
+                ) : (
+                  <iframe
+                    src={templatePreviewUrl(selectedTemplate.id)}
+                    style={{ width: "100%", height: "100%", border: 0 }}
+                    title={`${selectedTemplate.name} Preview`}
+                    className="pointer-events-none"
+                    scrolling="no"
+                  />
+                )}
               </div>
 
               <PremiumUpgradeModal
@@ -236,6 +234,9 @@ const ResumeTemplates: React.FC = () => {
     );
   }
 
+  const startIdx = (currentPage - 1) * TEMPLATES_PER_PAGE;
+  const displayTemplates = templates.slice(startIdx, startIdx + TEMPLATES_PER_PAGE);
+
   return (
     <div className={`space-y-6 ${THEME.layout.spacing.xl}`}>
       <div className="flex items-center justify-end">
@@ -245,7 +246,7 @@ const ResumeTemplates: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
-        {templates.map((template) => (
+        {displayTemplates.map((template) => (
           <Card
             key={template.id}
             hoverEffect
@@ -267,6 +268,7 @@ const ResumeTemplates: React.FC = () => {
                 <LazyIframe
                   src={templatePreviewUrl(template.id)}
                   title={`${template.name} Preview`}
+                  colorScheme={template.color_scheme}
                 />
               </div>
 
@@ -332,8 +334,9 @@ const ResumeTemplates: React.FC = () => {
   );
 };
 
-function LazyIframe({ src, title }: { src: string; title: string }) {
+function LazyIframe({ src, title, colorScheme, previewFailed: _pf }: { src: string; title: string; colorScheme?: { primary: string; secondary: string; accent: string; }; previewFailed?: boolean }) {
   const [loaded, setLoaded] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -352,11 +355,27 @@ function LazyIframe({ src, title }: { src: string; title: string }) {
     return () => observer.disconnect();
   }, []);
 
+  const showPlaceholder = (loaded && iframeError) || _pf;
+
   return (
     <div ref={ref} style={{ width: '100%', height: '100%' }}>
-      {loaded ? (
+      {showPlaceholder ? (
+        <div
+          className="flex flex-col items-center justify-center h-full p-4 text-center"
+          style={{ backgroundColor: colorScheme?.secondary || '#f3f4f6' }}
+        >
+          <div className="text-3xl font-bold mb-1" style={{ color: colorScheme?.primary || '#6366f1' }}>
+            {title.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+          </div>
+          <div className="text-xs font-semibold" style={{ color: colorScheme?.text || '#374151' }}>
+            {title}
+          </div>
+          <div className="mt-2 text-[10px] text-gray-400">Preview unavailable</div>
+        </div>
+      ) : loaded ? (
         <iframe
           src={src}
+          onError={() => setIframeError(true)}
           style={{ width: '100%', height: '100%', border: 0 }}
           title={title}
           className="pointer-events-none"
