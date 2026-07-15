@@ -11,6 +11,7 @@ import ATSResumeBuilder from '@/components/resume/ATSResumeBuilder';
 import ResumeVersionCard from '@/components/resume/ResumeVersionCard';
 import CreateResumeCard from '@/components/resume/CreateResumeCard';
 import UploadResumeCard from '@/components/resume/UploadResumeCard';
+import ExploreTemplatesCard from '@/components/resume/ExploreTemplatesCard';
 import ResumeAnalytics from '@/components/resume/ResumeAnalytics';
 import ResumeTemplates from '@/components/resume/ResumeTemplates';
 import ResumeShare from '@/components/resume/ResumeShare';
@@ -295,12 +296,15 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
       {activeTab === "versions" && (
         <>
           <div className={`space-y-8 p-4 md:p-6 ${THEME.layout.spacing.xl}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div onClick={() => handleTabChange("builder")} className="cursor-pointer">
                 <CreateResumeCard />
               </div>
               <div className="cursor-pointer">
                 <UploadResumeCard onClick={() => handleTabChange("uploadBuilder")} />
+              </div>
+              <div onClick={() => handleTabChange("templates")} className="cursor-pointer">
+                <ExploreTemplatesCard />
               </div>
               <a
                 href="https://resume-pro-ebon.vercel.app/"
@@ -359,6 +363,13 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Resume Templates Section */}
+          <div className={`${THEME.layout.spacing.xl} mt-12`}>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">Choose the Perfect Template for Your Resume</h3>
+            <p className="text-sm text-gray-500 mb-6">Pick a professional design to make your resume stand out</p>
+            <ResumeTemplates />
           </div>
         </>
       )}
