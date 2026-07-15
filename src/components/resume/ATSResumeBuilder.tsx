@@ -310,8 +310,7 @@ export default function ATSResumeBuilder() {
   // window so the user can "Save as PDF".
   const handleDownloadPdf = async () => {
     if (!templateId) {
-      toast.error("Pick a template first to download your resume.");
-      setActiveSection("templates");
+      toast.error("Save your resume first. Template download is unavailable right now.");
       return;
     }
     const name = resumeData.personalInfo.fullName?.trim() || "Resume";
@@ -332,7 +331,7 @@ export default function ATSResumeBuilder() {
           toast.error("Couldn't generate the PDF.", { id: toastId });
         }
       } catch {
-        toast.error("Couldn't generate the PDF. Is the resume service running?", { id: toastId });
+        toast.error("Template service unavailable. Save your resume and try again later.", { id: toastId });
       }
     }
   };
@@ -341,8 +340,7 @@ export default function ATSResumeBuilder() {
   // Falls back to downloading the PDF if the popup is blocked.
   const handleViewFullscreen = async () => {
     if (!templateId) {
-      toast.error("Pick a template first to preview your resume.");
-      setActiveSection("templates");
+      toast.error("Template preview is unavailable right now. Save your resume and try again.");
       return;
     }
     try {
