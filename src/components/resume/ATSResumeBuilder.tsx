@@ -354,19 +354,24 @@ export default function ATSResumeBuilder() {
     }
   };
 
+  const escHtml = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
   const openResumeWindow = () => {
-    const p = resumeData.personalInfo;
+    const p = resumeData.personalInfo || {} as any;
     const win = window.open('', '_blank');
     if (!win) { toast.error("Pop-up blocked"); return; }
     const sectionHtml = (label: string, content: string) => content ? `<div style="margin-bottom:14px"><h2 style="font-size:13px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #7c3aed;padding-bottom:4px;margin-bottom:6px">${label}</h2>${content}</div>` : '';
     const contactHtml = [p.email, p.phone, p.location].filter(Boolean).join(' &nbsp;|&nbsp; ');
-    const summaryHtml = resumeData.summary ? `<p style="font-size:13px;color:#4b5563;line-height:1.6;margin:0">${resumeData.summary}</p>` : '';
-    const expHtml = resumeData.experience.map(e => `<div style="margin-bottom:8px"><div style="font-weight:600;font-size:13px;color:#111827">${e.title}</div><div style="color:#6b7280;font-size:12px">${[e.company, `${e.startDate} – ${e.current ? 'Present' : e.endDate}`].filter(Boolean).join(' · ')}</div><div style="font-size:12px;color:#4b5563;margin-top:2px;line-height:1.5">${e.description}</div></div>`).join('');
-    const eduHtml = resumeData.education.map(e => `<div style="margin-bottom:4px"><div style="font-weight:600;font-size:13px;color:#111827">${e.degree}</div><div style="color:#6b7280;font-size:12px">${[e.institution, e.graduationDate].filter(Boolean).join(' · ')}${e.gpa ? ` · <span style="font-weight:500">GPA: ${e.gpa}</span>` : ''}</div></div>`).join('');
-    const skillsHtml = resumeData.skills.length ? resumeData.skills.join(' &middot; ') : '';
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${p.fullName || 'Resume'} - Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Segoe UI,sans-serif;background:#f3f4f6;display:flex;justify-content:center;padding:40px 16px}.page{max-width:800px;width:100%;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:40px 48px;border-radius:4px}.header{margin-bottom:20px}.header h1{font-size:26px;font-weight:700;color:#111827;margin:0;line-height:1.2}.header .title{font-size:14px;color:#6b7280;margin-top:2px}.header .contact{font-size:13px;color:#6b7280;margin-top:4px}</style></head><body><div class="page"><div class="header"><h1>${p.fullName || 'Resume'}</h1>${resumeData.experience[0]?.title ? `<div class="title">${resumeData.experience[0].title}</div>` : ''}${contactHtml ? `<div class="contact">${contactHtml}</div>` : ''}</div>${sectionHtml('Professional Summary', summaryHtml)}${sectionHtml('Experience', expHtml)}${sectionHtml('Education', eduHtml)}${sectionHtml('Skills', skillsHtml)}</div></body></html>`;
-    win.document.write(html);
-    win.document.close();
+    const summaryHtml = resumeData.summary ? `<p style="font-size:13px;color:#4b5563;line-height:1.6;margin:0">${escHtml(resumeData.summary)}</p>` : '';
+    const expHtml = (resumeData.experience || []).map(e => e?.title || e?.company ? `<div style="margin-bottom:8px"><div style="font-weight:600;font-size:13px;color:#111827">${escHtml(e.title || '')}</div><div style="color:#6b7280;font-size:12px">${[e.company, e.startDate ? `${e.startDate} – ${e.current ? 'Present' : e.endDate || ''}` : ''].filter(Boolean).join(' · ')}</div>${e.description ? `<div style="font-size:12px;color:#4b5563;margin-top:2px;line-height:1.5">${escHtml(e.description)}</div>` : ''}</div>` : '').filter(Boolean).join('');
+    const eduHtml = (resumeData.education || []).map(e => e?.degree || e?.institution ? `<div style="margin-bottom:4px"><div style="font-weight:600;font-size:13px;color:#111827">${escHtml(e.degree || '')}</div><div style="color:#6b7280;font-size:12px">${[e.institution, e.graduationDate].filter(Boolean).join(' · ')}${e.gpa ? ` · <span style="font-weight:500">GPA: ${escHtml(e.gpa)}</span>` : ''}</div></div>` : '').filter(Boolean).join('');
+    const skillsHtml = (resumeData.skills || []).length ? resumeData.skills.map(s => escHtml(s)).join(' &middot; ') : '';
+    const hasData = p.fullName || contactHtml || summaryHtml || expHtml || eduHtml || skillsHtml;
+    const bodyContent = hasData
+      ? `<div class="page"><div class="header"><h1>${escHtml(p.fullName || 'Resume')}</h1>${resumeData.experience?.[0]?.title ? `<div class="title">${escHtml(resumeData.experience[0].title)}</div>` : ''}${contactHtml ? `<div class="contact">${contactHtml}</div>` : ''}</div>${sectionHtml('Professional Summary', summaryHtml)}${sectionHtml('Experience', expHtml)}${sectionHtml('Education', eduHtml)}${sectionHtml('Skills', skillsHtml)}</div>`
+      : `<div class="page" style="text-align:center;padding:80px 48px"><div style="font-size:48px;margin-bottom:16px">📄</div><h2 style="color:#374151;margin-bottom:8px">No Resume Data</h2><p style="color:#6b7280;font-size:14px;line-height:1.6">Fill in your details in the Resume Builder and click <strong>Save</strong>.<br>Then open the preview again to see your completed resume.</p></div>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escHtml(p.fullName || 'Resume')} - Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Segoe UI,sans-serif;background:#f3f4f6;display:flex;justify-content:center;padding:40px 16px}.page{max-width:800px;width:100%;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:40px 48px;border-radius:4px}.header{margin-bottom:20px}.header h1{font-size:26px;font-weight:700;color:#111827;margin:0;line-height:1.2}.header .title{font-size:14px;color:#6b7280;margin-top:2px}.header .contact{font-size:13px;color:#6b7280;margin-top:4px}</style></head><body>${bodyContent}</body></html>`;
+    try { win.document.write(html); win.document.close(); } catch (e) { toast.error("Failed to open preview"); }
   };
 
   // Calculate ATS Score

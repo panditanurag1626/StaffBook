@@ -695,7 +695,10 @@ function JobManagementContent() {
   useEffect(() => {
     getCurrentLocation()
       .then(loc => setUserLocation(loc))
-      .catch(() => {});
+      .catch(err => {
+        console.error("Job page location fetch failed:", err);
+        // Silently fail, MapComponent has its own fallback or will use defaultCenter
+      });
   }, []);
 
   // Fetch Nearby Jobs uniquely tracked by real-time slider updates globally

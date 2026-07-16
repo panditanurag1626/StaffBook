@@ -87,7 +87,9 @@ const NetworkingMapPage: React.FC = () => {
               const data = await response.json();
               if (data.location) setUserLocation(data.location);
             }
-          } catch (_) {}
+          } catch (err) {
+            console.error("Google Geolocation API failed:", err);
+          }
         }
       } finally {
         setLocationLoaded(true);

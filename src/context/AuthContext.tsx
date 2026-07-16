@@ -211,7 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             },
             async (error) => {
-              // Browser geolocation failed, trying fallback
+              console.warn("Browser geolocation failed, trying Google Geolocation API:", error.message);
               // Fallback to Google Geolocation API as requested
               try {
                 const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo";
@@ -237,9 +237,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     longitude: lngStr,
                     location: address,
                   });
-                  // Location updated via Google API
+                  console.log("Location updated via Google API:", address);
                 }
-              } catch (_) {}
+              } catch (fallbackError) {
+                console.error("Google Geolocation API fallback failed:", fallbackError);
+              }
             },
             { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
           );

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FALLBACK_TEMPLATES } from "@/lib/api/templates-fallback";
 import { buildPreviewHtml } from "@/lib/api/template-previews";
+import { inflateSync } from "zlib";
 
 function buildResumeHtml(data: any, accentColor = '#7c3aed'): string {
   const p = data?.personalInfo || {};
@@ -58,6 +59,80 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ status: 404, message: "Not found" }, { status: 404 });
 }
 
+/** Quick PDF text extraction using Node.js built-in zlib */
+function extractPdfText(buf: ArrayBuffer): string {
+  const raw = new TextDecoder("latin1").decode(buf);
+  const chunks: string[] = [];
+
+  const isReadable = (s: string): boolean => {
+    let good = 0;
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      if (c >= 32 && c <= 126) good++;
+      else if (c === 10 || c === 13 || c === 9) good++;
+      else if (c >= 192 && c <= 255) good++;
+    }
+    return s.length > 0 && good / s.length > 0.8;
+  };
+
+  const extract = (s: string): string => {
+    const out: string[] = [];
+    let i = 0, depth = 0, part = "";
+    while (i < s.length) {
+      if (s[i] === "\\") { part += s[i+1] || ""; i += 2; continue; }
+      if (s[i] === "(") { if (depth++ > 0) part += "("; }
+      else if (s[i] === ")") { if (--depth > 0) part += ")"; }
+      else part += s[i];
+      i++;
+      if (depth === 0 && part) { out.push(part); part = ""; }
+    }
+    return out.join("");
+  };
+
+  const extractReadable = (str: string) => {
+    const re = /\(((?:[^()\\]|\\.)*)\)\s*(?:Tj|'|")/g;
+    let m;
+    while ((m = re.exec(str)) !== null) {
+      const txt = extract("(" + m[1] + ")");
+      if (txt.trim() && isReadable(txt)) chunks.push(txt);
+    }
+    const arrRe = /\[([^\]]*)\]\s*TJ/g;
+    while ((m = arrRe.exec(str)) !== null) {
+      const innerRe = /\(((?:[^()\\]|\\.)*)\)/g;
+      let im;
+      while ((im = innerRe.exec(m[1])) !== null) {
+        const txt = extract("(" + im[1] + ")");
+        if (txt.trim() && isReadable(txt)) chunks.push(txt);
+      }
+    }
+  };
+
+  // Extract from uncompressed parts
+  extractReadable(raw);
+
+  // Decompress FlateDecode streams and extract text
+  const streamRe = /stream\s([\s\S]*?)\n?endstream/g;
+  while ((m = streamRe.exec(raw)) !== null) {
+    try {
+      const compressed = m[1].trim();
+      const buf2 = Buffer.from(compressed, "binary");
+      const dec = inflateSync(buf2);
+      extractReadable(dec.toString("latin1"));
+    } catch {}
+  }
+
+  return [...new Set(chunks)].join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/** Basic field extraction from plain text */
+function extractFields(text: string) {
+  const email = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0] || "";
+  const phone = text.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/)?.[0] || "";
+  const lines = text.split("\n").filter(Boolean);
+  const name = lines[0]?.replace(/^(resume|cv|curriculum vitae)/i, "").trim() || "";
+  return { name, email, phone, rawText: text.slice(0, 3000) };
+}
+
 export async function POST(request: NextRequest) {
   const path = request.nextUrl.pathname.replace("/resume-api/api/", "");
 
@@ -86,11 +161,26 @@ export async function POST(request: NextRequest) {
 
   if (path === "upload-resume") {
     const uploadId = "local_" + Date.now();
+    let fileName = "My Resume";
+    let extracted = { name: "", email: "", phone: "", rawText: "" };
+    try {
+      const form = await request.formData();
+      const file = form.get("file");
+      if (file && typeof file !== "string") {
+        fileName = file.name.replace(/\.(pdf|docx)$/i, "") || fileName;
+        if (file.name.endsWith(".pdf")) {
+          const buf = await file.arrayBuffer();
+          const pdfText = extractPdfText(buf);
+          if (pdfText) extracted = extractFields(pdfText);
+        }
+      }
+    } catch {}
+    const name = extracted.name || fileName;
     return NextResponse.json({
-      status: 200, message: "Resume parsed successfully (offline mode)",
+      status: 200, message: "Resume parsed. Edit any missing fields and save.",
       upload_id: uploadId,
       data: {
-        basics: { name: "Uploaded Resume", email: "", phone: "", summary: "" },
+        basics: { name, email: extracted.email, phone: extracted.phone, location: "", summary: extracted.rawText.slice(0, 500), url: "", profiles: [] },
         work: [],
         education: [],
         skills: [],

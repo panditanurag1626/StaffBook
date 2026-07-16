@@ -135,19 +135,19 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
     } catch (error: any) {
       console.error("=== Resume Upload Error ===");
       console.error("Message:", error.message);
-      // Server unavailable — load sample data so the builder is not empty.
+      // Upload failed — save file name only, user fills in details manually
       const sampleId = 'sample_' + Date.now();
+      const fileName = file.name.replace(/\.(pdf|docx)$/i, '');
       const sampleData = {
-        personalInfo: { fullName: file.name.replace(/\.(pdf|docx)$/i, ''), email: '', phone: '', location: '', linkedin: '', portfolio: '' },
+        personalInfo: { fullName: fileName, email: '', phone: '', location: '', linkedin: '', portfolio: '' },
         summary: '',
-        experience: [{ id: Date.now().toString(), title: 'Position', company: 'Company', location: '', startDate: '', endDate: '', current: true, description: '' }],
-        education: [{ id: (Date.now()+1).toString(), degree: 'Degree', institution: 'Institution', location: '', graduationDate: '', gpa: '' }],
-        skills: ['Skill 1', 'Skill 2', 'Skill 3'],
+        experience: [],
+        education: [],
+        skills: [],
         certifications: [],
       };
       localStorage.setItem(`parsedResumeData_${sampleId}`, JSON.stringify(sampleData));
-      localStorage.setItem(`rawResumeData_${sampleId}`, JSON.stringify({ data: { basics: { name: file.name.replace(/\.(pdf|docx)$/i, '') } } }));
-      toast.success('Resume upload queued. Fill in the details and save.');
+      toast.success('Upload queued. Fill in your details and save to complete your resume.');
       navigateToBuilder(sampleId);
     } finally {
       setIsUploading(false);
