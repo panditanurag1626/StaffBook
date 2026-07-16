@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       status: 200, message: "Resume parsed successfully (offline mode)",
       upload_id: uploadId,
       data: {
-        basics: { name: "My Resume", email: "", phone: "", summary: "" },
+        basics: { name: "Uploaded Resume", email: "", phone: "", summary: "" },
         work: [],
         education: [],
         skills: [],

@@ -32,12 +32,14 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
-    return [
+    const rules = [
       {
         source: '/api/proxy/:path*',
         destination: 'https://admin.staffbook.in/api/web/v1/:path*',
       },
     ];
+    // resume-api handled locally by route at src/app/resume-api/[...path]
+    return rules;
   },
 };
 
