@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { FiArrowLeft, FiLoader, FiFileText, FiStar } from "react-icons/fi";
 import apiClient from "@/lib/api/config";
@@ -97,6 +97,7 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
   const [activeTab, setActiveTab] = useState<
     "versions" | "builder" | "analytics" | "templates" | "share" | "uploadBuilder"
   >(searchParams.get(queryParam) as any || "versions");
+  const [resumeRefreshKey, setResumeRefreshKey] = useState(0);
 
   const handleTabChange = (tab: string) => {
     // Limit free users to 3 resumes
@@ -116,6 +117,11 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
     if (tab !== "builder") {
       params.delete("upload_id");
       params.delete("resume_id");
+    }
+    
+    // Refresh resume list when going back to versions tab
+    if (tab === "versions") {
+      setResumeRefreshKey(k => k + 1);
     }
     
     router.push(`${pathname}?${params.toString()}`);
@@ -166,7 +172,7 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
     };
 
     fetchResumes();
-  }, []);
+  }, [resumeRefreshKey]);
 
   const handleEditResume = (resumeId: string, uploadId: string, rawData: any) => {
     const parsedData = rawData?.data || {};

@@ -577,18 +577,24 @@ export default function ATSResumeBuilder() {
         };
 
         setResumeData(mappedData);
-        // Clear after loading so it doesn't persist forever
-        localStorage.removeItem(storageKey);
 
         // Auto-save only if it's a freshly uploaded resume (no resumeId yet)
         if (!resumeId && !builderId) {
-          autoSaveResume(mappedData);
+          autoSaveResume(mappedData).then(() => {
+            // Only clear localStorage after auto-save succeeds
+            localStorage.removeItem(storageKey);
+          }).catch(() => {
+            // Keep localStorage data on failure so it can be retried
+          });
+        } else {
+          // Already has an ID from a previous save; safe to clear
+          localStorage.removeItem(storageKey);
         }
       } catch (e) {
         console.error("Failed to parse resume data", e);
       }
     }
-  }, [uploadId]);
+  }, [uploadId, resumeId, builderId]);
 
 
   const sections = [

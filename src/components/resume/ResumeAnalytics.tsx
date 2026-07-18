@@ -1,7 +1,7 @@
 import React from 'react';
 import { THEME } from '../../styles/theme';
 import Card from '../shared/Card';
-import { FiBarChart2, FiDownload, FiTrendingUp, FiActivity } from 'react-icons/fi';
+import { FiBarChart2, FiDownload, FiTrendingUp, FiActivity, FiEye } from 'react-icons/fi';
 
 interface ResumeVersion {
   id: string;
@@ -176,7 +176,5 @@ const ResumeAnalytics: React.FC<ResumeAnalyticsProps> = ({ resumeVersions }) => 
     </div>
   );
 };
-
-import { FiEye } from 'react-icons/fi';
 
 export default ResumeAnalytics;

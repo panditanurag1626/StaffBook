@@ -139,15 +139,23 @@ export async function POST(request: NextRequest) {
   if (path === "ats-score") {
     const body = await request.json().catch(() => ({}));
     const data = body?.data || {};
+
+    // Normalise snake_case keys that the builder sends
+    const pi = data?.personal_info || data?.personalInformation || data?.personalInfo || {};
+    const exp = data?.work_experience || data?.experience || [];
+    const edu = data?.education || [];
+    const sk = data?.skills || [];
+    const cert = data?.certifications || [];
+
     let score = 0;
-    if (data?.personalInfo?.fullName) score += 10;
-    if (data?.personalInfo?.email) score += 10;
-    if (data?.personalInfo?.phone) score += 10;
-    if (data?.summary && data.summary.length > 50) score += 15;
-    if (data?.experience?.length) score += 15;
-    if (data?.education?.length) score += 10;
-    if (data?.skills?.length) score += 15;
-    if (data?.certifications?.length) score += 5;
+    if (pi?.full_name || pi?.fullName) score += 10;
+    if (pi?.email) score += 10;
+    if (pi?.phone) score += 10;
+    if ((data?.professional_summary || data?.summary || "").length > 50) score += 15;
+    if (exp.length) score += 15;
+    if (edu.length) score += 10;
+    if (sk.length) score += 15;
+    if (cert.length) score += 5;
     return NextResponse.json({
       status: 200, message: "ATS score calculated",
       data: {
