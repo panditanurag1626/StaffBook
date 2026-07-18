@@ -566,24 +566,30 @@ export default function JobDetailPage() {
                       size="sm"
                       isRevealed={showEmail}
                     />
-                    <PlatformActionButton
-                      icon={FiBookmark}
-                      label="Save"
-                      onClick={handleToggleSave}
-                      isSaved={isSaved}
-                      isLoading={toggleLoading}
-                      showLabelBelow
-                      size="sm"
-                    />
-                    <PlatformActionButton
-                      icon={FiSend}
-                      label="Apply"
-                      onClick={() => setShowApplyModal(true)}
-                      disabled={job.is_applied}
-                      isRevealed={job.is_applied}
-                      showLabelBelow
-                      size="sm"
-                    />
+                    {(() => {
+                      const jobIsApplied = !!(job.is_applied || job.isApplied);
+                      return (
+                        <>
+                          <PlatformActionButton
+                            icon={FiBookmark}
+                            label="Save"
+                            onClick={handleToggleSave}
+                            isSaved={isSaved}
+                            isLoading={toggleLoading}
+                            showLabelBelow
+                            size="sm"
+                          />
+                          <PlatformActionButton
+                            icon={jobIsApplied ? FiCheck : FiSend}
+                            label={jobIsApplied ? "Applied" : "Apply"}
+                            onClick={() => { if (!jobIsApplied) setShowApplyModal(true); }}
+                            isLocked={jobIsApplied}
+                            showLabelBelow
+                            size="sm"
+                          />
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </Card>

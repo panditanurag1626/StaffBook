@@ -90,9 +90,9 @@ export const jobService = {
      * @param page - Page number
      * @param perPage - Items per page
      */
-    getMyAppliedJobs: async (page = 1, perPage = 10): Promise<ApiResponse<any>> => {
+    getMyAppliedJobs: async (page = 1, perPage = 10, cacheBust?: number): Promise<ApiResponse<any>> => {
         const response = await apiClient.get<ApiResponse<any>>(
-            `job-post/my-applied-jobs?page=${page}&per-page=${perPage}`
+            `job-post/my-applied-jobs?page=${page}&per-page=${perPage}${cacheBust ? `&_t=${cacheBust}` : ''}`
         );
         return response.data;
     },

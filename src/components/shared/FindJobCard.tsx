@@ -1,9 +1,9 @@
 'use client'
-import React, { useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
-  FiBookmark, FiUserPlus, FiMail, FiPhone, FiSend,
+  FiBookmark, FiUserPlus, FiMail, FiPhone, FiSend, FiCheck,
   FiNavigation, FiBriefcase, FiClock, FiImage
 } from 'react-icons/fi';
 import { FaRupeeSign, FaStar } from 'react-icons/fa';
@@ -56,6 +56,9 @@ const FindJobCard: React.FC<FindJobCardProps> = ({
 }) => {
   const router = useRouter();
   const mountTimestamp = useRef(Date.now());
+  const [emailRevealed, setEmailRevealed] = useState(false);
+  const [contactRevealed, setContactRevealed] = useState(false);
+  const isApplied = job.isApplied || job.is_applied;
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -210,21 +213,22 @@ const FindJobCard: React.FC<FindJobCardProps> = ({
             icon={FiMail}
             label="Email"
             showLabelBelow
-            onClick={(e) => { e.stopPropagation(); onShowEmail(e); }}
+            isRevealed={emailRevealed}
+            onClick={(e) => { e.stopPropagation(); setEmailRevealed(true); onShowEmail(e); }}
           />
           <PlatformActionButton
             icon={FiPhone}
             label="Contact"
             showLabelBelow
-            onClick={(e) => { e.stopPropagation(); onShowContact(e); }}
+            isRevealed={contactRevealed}
+            onClick={(e) => { e.stopPropagation(); setContactRevealed(true); onShowContact(e); }}
           />
           <PlatformActionButton
-            icon={FiSend}
-            label="Apply"
+            icon={isApplied ? FiCheck : FiSend}
+            label={isApplied ? "Applied" : "Apply"}
             showLabelBelow
-            disabled={job.isApplied || job.is_applied}
-            isRevealed={job.isApplied || job.is_applied}
-            onClick={(e) => { e.stopPropagation(); if (!(job.isApplied || job.is_applied)) onApply(); }}
+            isLocked={isApplied}
+            onClick={(e) => { e.stopPropagation(); if (!isApplied) onApply(); }}
           />
         </div>
       </div>

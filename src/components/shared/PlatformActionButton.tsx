@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { FiLoader, FiLock } from 'react-icons/fi';
+import { FiLoader } from 'react-icons/fi';
 
 interface PlatformActionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: React.ElementType;
@@ -12,6 +12,7 @@ interface PlatformActionButtonProps extends React.ButtonHTMLAttributes<HTMLButto
   isRevealed?: boolean;
   isLocked?: boolean;
   labelClassName?: string;
+  tooltip?: string;
 }
 
 /**
@@ -35,8 +36,10 @@ const PlatformActionButton: React.FC<PlatformActionButtonProps> = ({
   className,
   disabled,
   children,
+  tooltip,
   ...props
 }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
   const sizeConfigs = {
     sm: { button: 'h-9 sm:h-8 px-3', icon: 14, text: 'text-[11px] sm:text-[10px]' },
     md: { button: 'h-11 sm:h-10 px-4', icon: 16, text: 'text-sm sm:text-xs' },
@@ -82,18 +85,29 @@ const PlatformActionButton: React.FC<PlatformActionButtonProps> = ({
 
   return (
     <div className={cn("flex flex-col items-center gap-1", isIconButton ? "min-w-0 flex-1" : "w-fit shrink-0")}>
-      <button
-        className={buttonClasses}
-        disabled={isDisabled || isLoading}
-        type="button"
-        {...props}
+      <div className="relative"
+        onMouseEnter={() => isRevealed && tooltip && setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
       >
-        <div className={innerClasses}>
-          {isLoading ? (
-            <FiLoader className="animate-spin text-gray-400" size={config.icon} />
+        {showTooltip && tooltip && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none">
+            <div className="bg-gray-900 text-white text-[11px] px-3 py-1.5 rounded-md shadow-md whitespace-nowrap animate-fade-in">
+              {tooltip}
+            </div>
+          </div>
+        )}
+        <button
+          className={buttonClasses}
+          disabled={isDisabled || isLoading}
+          type="button"
+          {...props}
+        >
+          <div className={innerClasses}>
+            {isLoading ? (
+              <FiLoader className="animate-spin text-gray-400" size={config.icon} />
           ) : isLocked ? (
             <>
-              <FiLock size={config.icon} className="text-gray-300" />
+              {Icon && <Icon size={config.icon} className="text-gray-300" />}
               {children ? (
                 <div className={textClasses}>{children}</div>
               ) : (
@@ -101,17 +115,18 @@ const PlatformActionButton: React.FC<PlatformActionButtonProps> = ({
               )}
             </>
           ) : (
-            <>
-              {Icon && <Icon size={config.icon} className={iconClasses} fill={isSaved ? "currentColor" : "none"} />}
-              {children ? (
-                <div className={textClasses}>{children}</div>
-              ) : (
-                label && !showLabelBelow && <span className={textClasses}>{label}</span>
-              )}
-            </>
-          )}
-        </div>
-      </button>
+              <>
+                {Icon && <Icon size={config.icon} className={iconClasses} fill={isSaved ? "currentColor" : "none"} />}
+                {children ? (
+                  <div className={textClasses}>{children}</div>
+                ) : (
+                  label && !showLabelBelow && <span className={textClasses}>{label}</span>
+                )}
+              </>
+            )}
+          </div>
+        </button>
+      </div>
       {label && showLabelBelow && (
         <span className={cn(
             "text-[9px] font-bold uppercase tracking-normal transition-colors text-center whitespace-nowrap",

@@ -8,6 +8,7 @@ interface WithdrawApplicationModalProps {
     onClose: () => void;
     jobTitle: string;
     jobId: string;
+    applicationId?: string | number;
     onSubmit: (formData: FormData) => Promise<void>;
 }
 
@@ -16,6 +17,7 @@ const WithdrawApplicationModal: React.FC<WithdrawApplicationModalProps> = ({
     onClose,
     jobTitle,
     jobId,
+    applicationId,
     onSubmit,
 }) => {
     const [reason, setReason] = useState("");
@@ -27,6 +29,7 @@ const WithdrawApplicationModal: React.FC<WithdrawApplicationModalProps> = ({
         try {
             const formData = new FormData();
             formData.append("job_post_id", jobId);
+            if (applicationId) formData.append("application_id", String(applicationId));
             formData.append("reason", reason);
             await onSubmit(formData);
         } catch (error) {

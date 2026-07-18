@@ -399,6 +399,61 @@ function JobManagementContent() {
 
   const [appliedJobs, setAppliedJobs] = useState<AppliedJobData[]>([]);
   const [selectedWithdrawJob, setSelectedWithdrawJob] = useState<AppliedJobData | null>(null);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+
+  const getWithdrawnIds = (): Set<string> => {
+    try { return new Set(JSON.parse(localStorage.getItem('withdrawnJobIds') || '[]')); }
+    catch { return new Set(); }
+  };
+  const addWithdrawnId = (id: string) => {
+    const ids = getWithdrawnIds();
+    ids.add(id);
+    localStorage.setItem('withdrawnJobIds', JSON.stringify([...ids]));
+  };
+  // Filter out withdrawn jobs from appliedJobs
+  const visibleAppliedJobs = appliedJobs.filter(j => !getWithdrawnIds().has(j.id));
+
+  // Store withdrawn job details for browse-tab matching
+  interface WithdrawnJobInfo { id: string; title: string; company: string; browseId?: string; }
+  const getWithdrawnJobs = (): WithdrawnJobInfo[] => {
+    try { return JSON.parse(localStorage.getItem('withdrawnJobDetails') || '[]'); }
+    catch { return []; }
+  };
+  const addWithdrawnJobInfo = (info: WithdrawnJobInfo) => {
+    const list = getWithdrawnJobs().filter(i => i.id !== info.id);
+    list.push(info);
+    localStorage.setItem('withdrawnJobDetails', JSON.stringify(list));
+  };
+  const isJobWithdrawn = (job: any) => {
+    const infoList = getWithdrawnJobs();
+    if (!infoList.length) return false;
+    const jobId = job.id?.toString();
+    const jobTitle = (job.position || '').toLowerCase().trim();
+    const jobComp = (job.company || '').toLowerCase().trim();
+    return infoList.some(info =>
+      info.id === jobId ||
+      info.browseId === jobId ||
+      (!!info.title && !!info.company && info.title.toLowerCase().trim() === jobTitle && info.company.toLowerCase().trim() === jobComp)
+    );
+  };
+  const clearWithdrawnJobInfo = (job: any) => {
+    try {
+      const jobId = job.id?.toString();
+      // Remove from withdrawnJobIds
+      const ids = getWithdrawnIds();
+      ids.delete(jobId);
+      localStorage.setItem('withdrawnJobIds', JSON.stringify([...ids]));
+      // Remove from withdrawnJobDetails by matching id, browseId, or title+company
+      const jobTitle = (job.position || '').toLowerCase().trim();
+      const jobComp = (job.company || '').toLowerCase().trim();
+      const list = getWithdrawnJobs().filter(i =>
+        i.id !== jobId &&
+        i.browseId !== jobId &&
+        !(!!i.title && !!i.company && i.title.toLowerCase().trim() === jobTitle && i.company.toLowerCase().trim() === jobComp)
+      );
+      localStorage.setItem('withdrawnJobDetails', JSON.stringify(list));
+    } catch { /* ignore localStorage errors */ }
+  };
 
   // Filter state management using custom hook
   const { filters, appliedFilters, applyFilters, setters, helpers } = useJobFilters();
@@ -459,7 +514,46 @@ function JobManagementContent() {
 
   // Removed obsolete handleLocationSearch
 
+  const markJobApplied = (jobId: string, applied = true) => {
+    const update = (prev: any[]) => prev.map(j =>
+      j.id.toString() === jobId.toString()
+        ? { ...j, is_applied: applied, isApplied: applied }
+        : j
+    );
+    setPostings(update);
+    setNearbyJobs(update);
+    setRecommendedJobs(update);
+    setSavedJobs(update);
+  };
+
+  const unmarkAppliedJobByDetails = (appliedJob: AppliedJobData) => {
+    const normalize = (s: string) => (s || '').toLowerCase().trim();
+    const pTitle = normalize(appliedJob.job.title);
+    const pCompany = normalize(appliedJob.recruiter.company);
+    const matchTarget = (j: any) =>
+      normalize(j.position) === pTitle &&
+      normalize(j.company) === pCompany;
+    const found = postings.find(matchTarget)
+      || nearbyJobs.find(matchTarget)
+      || recommendedJobs.find(matchTarget)
+      || savedJobs.find(matchTarget);
+    if (found) {
+      markJobApplied(found.id, false);
+      // Also store the browse-tab ID for reliable render-time matching
+      const existing = getWithdrawnJobs().filter(i => i.id !== appliedJob.id);
+      existing.push({
+        id: appliedJob.id,
+        title: appliedJob.job.title,
+        company: appliedJob.recruiter.company,
+        browseId: found.id,
+      });
+      localStorage.setItem('withdrawnJobDetails', JSON.stringify(existing));
+    }
+  };
+
   const applyFromRecommendation = (job: any) => {
+    clearWithdrawnJobInfo(job);
+    markJobApplied(job.id);
     router.push(`/profile/jobs/${job.id}`);
   };
 
@@ -688,7 +782,8 @@ function JobManagementContent() {
     appliedCurrentPage,
     appliedSearchQuery,
     appliedExperience,
-    activeTab
+    activeTab,
+    refreshCounter,
   ]);
 
   // Fetch initial precise location
@@ -904,6 +999,8 @@ function JobManagementContent() {
 
   // Seeker actions
   const applyToPosting = (posting: EmployerPosting) => {
+    clearWithdrawnJobInfo(posting);
+    markJobApplied(posting.id);
     router.push(`/profile/jobs/${posting.id}`);
   };
   const toggleSaveJob = async (job: any) => {
@@ -1564,10 +1661,10 @@ function JobManagementContent() {
                       </div>
                     </div>
 
-                    {appliedJobs.length > 0 ? (
+                    {visibleAppliedJobs.length > 0 ? (
                       <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6">
-                            {appliedJobs
+                            {visibleAppliedJobs
                             .slice((appliedCurrentPage - 1) * itemsPerPage, appliedCurrentPage * itemsPerPage)
                             .map((job) => (
                               <div key={job.id}>
@@ -1591,7 +1688,7 @@ function JobManagementContent() {
                         </div>
 
                         {/* Pagination */}
-                        {appliedJobs.length > itemsPerPage && (
+                        {visibleAppliedJobs.length > itemsPerPage && (
                           <div className="flex justify-center items-center gap-2 mt-8 pb-4">
                             <button
                               onClick={() => setAppliedCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -1604,7 +1701,7 @@ function JobManagementContent() {
                               <FiChevronLeft size={20} />
                             </button>
 
-                            {Array.from({ length: Math.ceil(appliedJobs.length / itemsPerPage) }, (_, i) => i + 1).map((page) => (
+                            {Array.from({ length: Math.ceil(visibleAppliedJobs.length / itemsPerPage) }, (_, i) => i + 1).map((page) => (
                               <button
                                 key={page}
                                 onClick={() => setAppliedCurrentPage(page)}
@@ -1618,9 +1715,9 @@ function JobManagementContent() {
                             ))}
 
                             <button
-                              onClick={() => setAppliedCurrentPage(prev => Math.min(prev + 1, Math.ceil(appliedJobs.length / itemsPerPage)))}
-                              disabled={appliedCurrentPage === Math.ceil(appliedJobs.length / itemsPerPage)}
-                              className={`w-10 h-10 rounded-lg border border-gray-200 transition-colors flex items-center justify-center ${appliedCurrentPage === Math.ceil(appliedJobs.length / itemsPerPage)
+                              onClick={() => setAppliedCurrentPage(prev => Math.min(prev + 1, Math.ceil(visibleAppliedJobs.length / itemsPerPage)))}
+                              disabled={appliedCurrentPage === Math.ceil(visibleAppliedJobs.length / itemsPerPage)}
+                              className={`w-10 h-10 rounded-lg border border-gray-200 transition-colors flex items-center justify-center ${appliedCurrentPage === Math.ceil(visibleAppliedJobs.length / itemsPerPage)
                                 ? 'text-gray-300 cursor-not-allowed'
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-purple-600'
                                 }`}
@@ -2103,19 +2200,23 @@ function JobManagementContent() {
                           </div>
 
                           <div className="flex md:grid md:grid-cols-2 xl:grid-cols-3 gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide md:overflow-visible md:snap-none pb-2 md:pb-0">
-                            {postings.map((p) => (
+                            {postings.map((p) => {
+                              const withdrawn = isJobWithdrawn(p);
+                              const adjusted = withdrawn ? { ...p, is_applied: false, isApplied: false } : p;
+                              return (
                               <div key={`recent-${p.id}`} className="min-w-[75vw] sm:min-w-[280px] md:min-w-0 snap-start">
                                 <FindJobCard
-                                  job={p}
+                                  job={adjusted}
                                   onSave={() => toggleSaveJob(p as any)}
                                   onConnect={(e) => handleConnectRequest(e, p.contactUserId)}
                                   onShowEmail={(e) => handleShowEmployerEmail(e, p as EmployerPosting)}
                                   onShowContact={(e) => handleShowEmployerContact(e, p as EmployerPosting)}
-                                  onApply={() => applyToPosting(p)}
+                                  onApply={() => applyToPosting(adjusted)}
                                   formatConnStatus={formatConnStatus}
                                 />
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
 
@@ -2149,7 +2250,7 @@ function JobManagementContent() {
                               </Link>
                             </div>
                             <NearbyJobsMapView
-                              postings={nearbyJobs}
+                              postings={nearbyJobs.map(j => isJobWithdrawn(j) ? { ...j, is_applied: false, isApplied: false } : j)}
                               radius={filters.radiusValue}
                               setRadius={(val) => {
                                 setters.setRadiusValue(val);
@@ -2195,19 +2296,23 @@ function JobManagementContent() {
 
                           <div className="flex md:grid md:grid-cols-2 xl:grid-cols-3 gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide md:overflow-visible md:snap-none pb-2 md:pb-0">
                             {recommendedJobs.length == 0 && (<p className="text-center text-gray-500 col-span-full hidden md:block">No Recommended jobs found</p>)}
-                            {recommendedJobs.map((job) => (
+                            {recommendedJobs.map((job) => {
+                              const withdrawn = isJobWithdrawn(job);
+                              const adjusted = withdrawn ? { ...job, is_applied: false, isApplied: false } : job;
+                              return (
                               <div key={job.id} className="min-w-[75vw] sm:min-w-[280px] md:min-w-0 snap-start">
                                 <FindJobCard
-                                  job={job}
+                                  job={adjusted}
                                   onSave={() => toggleSaveJob(job)}
                                   onConnect={(e) => handleConnectRequest(e, job.contactUserId)}
                                   onShowEmail={(e) => handleShowEmployerEmail(e, job)}
                                   onShowContact={(e) => handleShowEmployerContact(e, job)}
-                                  onApply={() => applyFromRecommendation(job)}
+                                  onApply={() => applyFromRecommendation(adjusted)}
                                   formatConnStatus={formatConnStatus}
                                 />
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
@@ -2266,13 +2371,31 @@ function JobManagementContent() {
           onClose={() => setSelectedWithdrawJob(null)}
           jobTitle={selectedWithdrawJob.job.title}
           jobId={selectedWithdrawJob.id}
+          applicationId={selectedWithdrawJob.applicationId}
           onSubmit={async (formData) => {
             try {
-              await jobService.withdrawApplication(formData);
-              setAppliedJobs(prev => prev.filter(job => job.id !== selectedWithdrawJob.id));
-              setSelectedWithdrawJob(null);
+              const resp = await jobService.withdrawApplication(formData);
+              const responseData = resp as any;
+              // Check if the API actually succeeded (some backends return 200 with success:false)
+              if (responseData?.status === 200 || responseData?.status === 201 || responseData?.success === true || responseData?.data?.success === true || !responseData?.error) {
+                toast.success(responseData?.message || "Application withdrawn successfully");
+                addWithdrawnId(selectedWithdrawJob.id);
+                addWithdrawnJobInfo({
+                  id: selectedWithdrawJob.id,
+                  title: selectedWithdrawJob.job.title,
+                  company: selectedWithdrawJob.recruiter.company,
+                });
+                setAppliedJobs(prev => prev.filter(job => job.id !== selectedWithdrawJob.id));
+                unmarkAppliedJobByDetails(selectedWithdrawJob);
+                setSelectedWithdrawJob(null);
+                setRefreshCounter(c => c + 1);
+              } else {
+                throw new Error(responseData?.message || "Failed to withdraw application");
+              }
             } catch (err) {
               console.error("Failed to withdraw application:", err);
+              const msg = (err as any)?.response?.data?.message || (err as any)?.message || "Failed to withdraw application";
+              toast.error(msg);
             }
           }}
         />
@@ -2358,6 +2481,18 @@ function NearbyJobsMapView({ postings, radius, setRadius, onSave, onConnectReque
   onShowEmail: (e: React.MouseEvent, job: EmployerPosting) => void,
   center?: { lat: number; lng: number }
 }) {
+  const [revealedJobContacts, setRevealedJobContacts] = useState<Record<string, 'email' | 'contact' | 'both'>>({});
+
+  const markRevealed = (jobId: string, type: 'email' | 'contact') => {
+    setRevealedJobContacts(prev => {
+      const current = prev[jobId];
+      if (current === type || current === 'both') return prev;
+      const next = type === 'email'
+        ? (current === 'contact' ? 'both' : 'email')
+        : (current === 'email' ? 'both' : 'contact');
+      return { ...prev, [jobId]: next };
+    });
+  };
   const router = useRouter();
 
   const nearbyJobs = postings.map((job, idx) => ({
@@ -2544,25 +2679,35 @@ function NearbyJobsMapView({ postings, radius, setRadius, onSave, onConnectReque
                       icon={FiMail}
                       label="Email"
                       showLabelBelow
-                      onClick={(e) => { e.stopPropagation(); onShowEmail(e, job); }}
+                      isRevealed={revealedJobContacts[job.id] === 'email' || revealedJobContacts[job.id] === 'both'}
+                      onClick={(e) => { e.stopPropagation(); markRevealed(job.id, 'email'); onShowEmail(e, job); }}
                       size="sm"
                     />
                     <PlatformActionButton
                       icon={FiPhone}
                       label="Contact"
                       showLabelBelow
-                      onClick={(e) => { e.stopPropagation(); onShowContact(e, job); }}
+                      isRevealed={revealedJobContacts[job.id] === 'contact' || revealedJobContacts[job.id] === 'both'}
+                      onClick={(e) => { e.stopPropagation(); markRevealed(job.id, 'contact'); onShowContact(e, job); }}
                       size="sm"
                     />
-                    <PlatformActionButton
-                      icon={FiSend}
-                      label="Apply"
-                      showLabelBelow
-                      isRevealed={job.isApplied || job.is_applied}
-                      disabled={job.isApplied || job.is_applied}
-                      onClick={(e) => { e.stopPropagation(); if (!(job.isApplied || job.is_applied)) handleApply(job); }}
-                      size="sm"
-                    />
+                    {job.isApplied || job.is_applied ? (
+                      <PlatformActionButton
+                        icon={FiCheck}
+                        label="Applied"
+                        showLabelBelow
+                        isLocked
+                        size="sm"
+                      />
+                    ) : (
+                      <PlatformActionButton
+                        icon={FiSend}
+                        label="Apply"
+                        showLabelBelow
+                        onClick={(e) => { e.stopPropagation(); handleApply(job); }}
+                        size="sm"
+                      />
+                    )}
                   </div>
                 </div>
               );
