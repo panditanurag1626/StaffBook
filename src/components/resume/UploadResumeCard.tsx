@@ -52,10 +52,17 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
   };
 
   const navigateToBuilder = (uploadId: string | number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('resumeTab', 'builder');
-    params.set('upload_id', uploadId.toString());
-    router.push(`${pathname}?${params.toString()}`);
+    const currentParams = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams(searchParams?.toString() || '');
+    currentParams.set('resumeTab', 'builder');
+    currentParams.set('upload_id', uploadId.toString());
+    const url = `${pathname}?${currentParams.toString()}`;
+    try {
+      router.push(url);
+    } catch {
+      window.location.href = url;
+    }
   };
 
   const doUpload = async (file: File) => {
@@ -135,6 +142,7 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
     } catch (error: any) {
       console.error("=== Resume Upload Error ===");
       console.error("Message:", error.message);
+      setFailedFile(file);
       // Upload failed — save file name only, user fills in details manually
       const sampleId = 'sample_' + Date.now();
       const fileName = file.name.replace(/\.(pdf|docx)$/i, '');
