@@ -72,7 +72,7 @@ const NetworkingMapPage: React.FC = () => {
         console.error("Error fetching user location:", error);
         const apiKey =
           process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
-          "AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo";
+          process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
         if (apiKey) {
           try {
             const response = await fetch(

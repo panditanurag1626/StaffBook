@@ -4,7 +4,7 @@ import { getDatabase } from "firebase/database";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo",
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo",
     authDomain: "staffbook-e43b7.firebaseapp.com",
     projectId: "staffbook-e43b7",
     storageBucket: "staffbook-e43b7.firebasestorage.app",

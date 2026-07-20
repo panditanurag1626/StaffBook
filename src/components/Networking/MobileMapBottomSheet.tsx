@@ -76,7 +76,7 @@ const MobileMapBottomSheet: React.FC<MobileMapBottomSheetProps> = ({
       } catch {
         const apiKey =
           process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
-          "AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo";
+          process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
         try {
           const res = await fetch(
             `https://www.googleapis.com/geolocation/v1/geolocate?key=${apiKey}`,

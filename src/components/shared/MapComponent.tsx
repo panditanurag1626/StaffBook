@@ -172,7 +172,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   }, [center]);
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo",
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
     libraries,
   });
 
@@ -409,7 +409,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
       );
     }
 
-    if (!(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo")) {
+    if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
       // Premium Mock Map Visualization
       return (
         <div className={`w-full ${isInteractive ? 'h-full' : (className ? 'h-full' : 'aspect-square')} bg-[#f8fafc] rounded-2xl flex flex-col items-center justify-center relative overflow-hidden border border-gray-200 shadow-inner`}>

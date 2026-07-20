@@ -186,12 +186,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const { latitude, longitude } = position.coords;
               const latStr = latitude.toString();
               const lngStr = longitude.toString();
-              const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo";
-
               try {
                 // Get human-readable address from Geocoding API
                 const geoResponse = await fetch(
-                  `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
+                  `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
                 );
                 const geoData = await geoResponse.json();
                 const address = geoData.results?.[0]?.formatted_address || "Current Location";
@@ -214,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               console.warn("Browser geolocation failed, trying Google Geolocation API:", error.message);
               // Fallback to Google Geolocation API as requested
               try {
-                const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo";
+                const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
                 const googleGeoResponse = await fetch(
                   `https://www.googleapis.com/geolocation/v1/geolocate?key=${apiKey}`,
                   { method: 'POST' }

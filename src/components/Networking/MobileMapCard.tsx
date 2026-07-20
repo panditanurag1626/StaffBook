@@ -57,7 +57,7 @@ const MobileMapCard: React.FC = () => {
     >
       {/* Top Map Image Preview */}
       <div className="relative h-32 w-full bg-gradient-to-br from-blue-100 to-blue-50">
-        <div className="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=19.076,72.8777&zoom=12&size=600x300&maptype=roadmap&key=AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo')] bg-cover bg-center" />
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('https://maps.googleapis.com/maps/api/staticmap?center=19.076,72.8777&zoom=12&size=600x300&maptype=roadmap&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}')` }} />
         <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/20 to-transparent" />
       </div>
 
