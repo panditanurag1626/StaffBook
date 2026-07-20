@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { FiUpload, FiLoader, FiRefreshCw } from 'react-icons/fi';
 import { THEME } from '../../styles/theme';
@@ -6,8 +7,6 @@ import { resumeApiClient } from '@/services/resumeApi';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 
-
-// AI parsing can take up to 2 minutes for large/complex resumes.
 const UPLOAD_TIMEOUT = 120_000;
 
 interface UploadResumeCardProps {
@@ -22,7 +21,6 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
   const [failedFile, setFailedFile] = useState<File | null>(null);
   const { user } = useAuth();
 
-  // Elapsed-seconds timer while uploading
   useEffect(() => {
     if (!isUploading) {
       setElapsed(0);
@@ -35,14 +33,10 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
   const handleCardClick = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
-
-    // If onClick is provided, it means we are in the list view, so just navigate
     if (onClick) {
       onClick();
       return;
     }
-
-    // Otherwise, we are in the uploadBuilder tab, so open the file picker
     if (!isUploading) {
       fileInputRef.current?.click();
     }
@@ -70,17 +64,10 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const { data } = await resumeApiClient.post(
-        "/api/upload-resume",
-        formData,
-        {
-          timeout: UPLOAD_TIMEOUT,
-        }
-      );
+      const { data } = await resumeApiClient.post("/api/upload-resume", formData, { timeout: UPLOAD_TIMEOUT });
 
       if (data.status === 200 && data.data) {
         const parsedData = data.data;
-
         const resumeDataForBuilder = {
           personalInfo: {
             fullName: parsedData.basics?.name || "",
@@ -133,7 +120,6 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
       console.error("=== Resume Upload Error ===");
       console.error("Message:", error.message);
       setFailedFile(file);
-      // Upload failed — save file name only, user fills in details manually
       const sampleId = 'sample_' + Date.now();
       const fileName = file.name.replace(/\.(pdf|docx)$/i, '');
       const sampleData = {
@@ -168,15 +154,8 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
   };
 
   return (
-
     <>
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        accept=".pdf,.docx"
-        className="hidden"
-      />
+      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf,.docx" className="hidden" />
       <Card
         className={`h-full min-h-[160px] md:min-h-[200px] border-2 border-dashed border-gray-300 hover:border-purple-400 bg-gray-50 hover:bg-white transition-all duration-300 group flex flex-col items-center justify-center gap-4 ${isUploading ? 'cursor-wait opacity-75' : 'cursor-pointer'}`}
         noPadding
@@ -188,9 +167,7 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
               <FiLoader size={24} className="md:w-8 md:h-8 text-purple-600 animate-spin" />
             </div>
             <div className="text-center px-4">
-              <h3 className={`${THEME.components.typography.cardTitle} text-purple-600`}>
-                Analyzing Resume...
-              </h3>
+              <h3 className={`${THEME.components.typography.cardTitle} text-purple-600`}>Analyzing Resume...</h3>
               <p className={`${THEME.components.typography.meta} mt-1 text-purple-500`}>
                 AI is extracting data{elapsed > 0 && ` (${elapsed}s)`}
               </p>
@@ -207,18 +184,10 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
               <FiUpload size={24} className="md:w-8 md:h-8 text-red-400" />
             </div>
             <div className="text-center px-4">
-              <h3 className="text-sm font-semibold text-red-600">
-                Upload Failed
-              </h3>
-              <p className={`${THEME.components.typography.meta} mt-1 text-red-500`}>
-                AI parsing timed out or encountered an error
-              </p>
-              <button
-                onClick={(e) => { e.stopPropagation(); handleRetry(); }}
-                className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <FiRefreshCw size={14} />
-                Try Again
+              <h3 className="text-sm font-semibold text-red-600">Upload Failed</h3>
+              <p className={`${THEME.components.typography.meta} mt-1 text-red-500`}>AI parsing timed out or encountered an error</p>
+              <button onClick={(e) => { e.stopPropagation(); handleRetry(); }} className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors">
+                <FiRefreshCw size={14} /> Try Again
               </button>
             </div>
           </>
@@ -228,18 +197,13 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
               <FiUpload size={24} className="md:w-8 md:h-8 text-gray-400 group-hover:text-purple-600 transition-colors duration-300" />
             </div>
             <div className="text-center px-4">
-              <h3 className={`${THEME.components.typography.cardTitle} text-gray-500 group-hover:text-purple-600 transition-colors duration-300`}>
-                Upload Resume
-              </h3>
-              <p className={`${THEME.components.typography.meta} mt-1`}>
-                Upload your existing PDF or Docx file
-              </p>
+              <h3 className={`${THEME.components.typography.cardTitle} text-gray-500 group-hover:text-purple-600 transition-colors duration-300`}>Upload Resume</h3>
+              <p className={`${THEME.components.typography.meta} mt-1`}>Upload your existing PDF or Docx file</p>
             </div>
           </>
         )}
       </Card>
     </>
-
   );
 };
 
