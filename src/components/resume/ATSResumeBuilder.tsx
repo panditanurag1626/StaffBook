@@ -31,7 +31,6 @@ import apiClient from "@/lib/api/config";
 import {
   fetchTemplateHtml,
   withResumeApiBase,
-  printTemplate,
   downloadTemplatePdf,
   openHtmlWindow,
   fetchAtsScore,
@@ -91,7 +90,7 @@ interface ATSScore {
   };
 }
 
-export default function ATSResumeBuilder({ uploadId: propUploadId }: { uploadId?: string | null }) {
+export default function ATSResumeBuilder() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -101,10 +100,7 @@ export default function ATSResumeBuilder({ uploadId: propUploadId }: { uploadId?
   // render produce identical HTML (prevents hydration mismatch).
   React.useEffect(() => { setMounted(true); }, []);
 
-  // When a prop is provided (from ResumeContent after upload), prefer it over URL params.
-  // This avoids the Next.js bug where useSearchParams doesn't update after same-pathname navigation.
-  const urlUploadId = !mounted ? null : searchParams.get('upload_id');
-  const uploadId = propUploadId ?? urlUploadId;
+  const uploadId = !mounted ? null : searchParams.get('upload_id');
   const resumeId = !mounted ? null : searchParams.get('resume_id');
   const templateId = !mounted ? null : searchParams.get('template_id');
   const { user } = useAuth();
@@ -350,19 +346,11 @@ export default function ATSResumeBuilder({ uploadId: propUploadId }: { uploadId?
       await downloadTemplatePdf(templateId, { data: getGroupedData() }, filename);
       toast.success("Resume downloaded!", { id: toastId });
     } catch (err) {
-      // Server has no PDF engine (501) or another error — fall back to the
-      // browser print dialog so the user can still "Save as PDF".
+      // Server-side download unavailable — fall back to browser print dialog
+      // with client-side rendered HTML.
       console.error("PDF download error:", err);
-      try {
-        const ok = await printTemplate(templateId, { data: getGroupedData() });
-        if (ok) {
-          toast("Opened print dialog — choose “Save as PDF”.", { id: toastId, icon: "🖨️" });
-        } else {
-          toast.error("Couldn't generate the PDF.", { id: toastId });
-        }
-      } catch {
-        toast.error("Template service unavailable. Save your resume and try again later.", { id: toastId });
-      }
+      openResumeWindow();
+      toast("Opened print dialog — choose “Save as PDF”.", { id: toastId, icon: "🖨️" });
     }
   };
 

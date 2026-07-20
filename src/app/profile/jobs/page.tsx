@@ -786,16 +786,14 @@ function JobManagementContent() {
     refreshCounter,
   ]);
 
-  // Fetch initial precise location (only ask if permission already granted)
+  // Fetch initial precise location
   useEffect(() => {
-    if (typeof navigator === 'undefined' || !navigator.permissions) return;
-    navigator.permissions.query({ name: 'geolocation' }).then(result => {
-      if (result.state === 'granted' || result.state === 'prompt') {
-        getCurrentLocation()
-          .then(loc => setUserLocation(loc))
-          .catch(() => {});
-      }
-    }).catch(() => {});
+    getCurrentLocation()
+      .then(loc => setUserLocation(loc))
+      .catch(err => {
+        console.error("Job page location fetch failed:", err);
+        // Silently fail, MapComponent has its own fallback or will use defaultCenter
+      });
   }, []);
 
   // Fetch Nearby Jobs uniquely tracked by real-time slider updates globally

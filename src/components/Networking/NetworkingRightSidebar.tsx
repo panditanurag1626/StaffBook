@@ -149,7 +149,7 @@ const NetworkingRightSidebar: React.FC = () => {
       } catch (error) {
         console.error("Error fetching user location:", error);
         // Fallback to Google Geolocation API if browser fails OR if you want it as a backup
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAYth6W-TTXAdXotw1ZlhjRLrsYjrSidYo";
         if (apiKey) {
           try {
             const response = await fetch(`https://www.googleapis.com/geolocation/v1/geolocate?key=${apiKey}`, {

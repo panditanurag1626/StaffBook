@@ -10,14 +10,6 @@ import { NextRequest, NextResponse } from "next/server";
 const RESUME_API_ORIGIN = process.env.RESUME_API_ORIGIN || '';
 
 /**
- * Path rewrite rules for backward compatibility.
- * Maps old frontend endpoint paths to current backend paths.
- */
-const PATH_REWRITES: Record<string, string> = {
-  '/api/ats-score': '/api/ats-analyze',
-};
-
-/**
  * Proxy /resume-api/* → external Resume API.
  *
  * This handler provides a CORS-free path for browser code: the client calls
@@ -28,7 +20,6 @@ const PATH_REWRITES: Record<string, string> = {
  * All new code should import from `@/services/resumeApi`.  The base URL in
  * that module defaults to `/resume-api`, which routes traffic through here.
  */
-
 async function proxy(request: NextRequest): Promise<NextResponse> {
   if (!RESUME_API_ORIGIN) {
     return NextResponse.json(
@@ -37,10 +28,7 @@ async function proxy(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  let path = request.nextUrl.pathname.replace("/resume-api", "");
-  if (PATH_REWRITES[path]) {
-    path = PATH_REWRITES[path];
-  }
+  const path = request.nextUrl.pathname.replace("/resume-api", "");
   const url = `${RESUME_API_ORIGIN}${path}${request.nextUrl.search}`;
 
   try {

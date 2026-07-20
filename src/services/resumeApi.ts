@@ -180,17 +180,18 @@ export async function getTemplateCategories(): Promise<string[]> {
   return Array.isArray(cat) ? cat : [];
 }
 
-/** POST /api/templates/{id}/html — render template, returns raw HTML string */
+/** POST /api/templates/{id}/render — render template, returns HTML string */
 export async function renderTemplateHtml(
   templateId: number | string,
   body: Record<string, unknown>,
 ): Promise<string> {
   const { data } = await resumeApiClient.post(
-    `/api/templates/${templateId}/html`,
+    `/api/templates/${templateId}/render`,
     body,
-    { responseType: 'text' },
   );
-  return typeof data === 'string' ? data : String(data ?? '');
+  const html = data?.data?.html ?? data?.html ?? (typeof data === 'string' ? data : null);
+  if (!html) throw new Error('No HTML in render response');
+  return String(html);
 }
 
 /** POST /api/templates/{id}/render — render template, returns structured data */
@@ -213,26 +214,22 @@ export async function analyzeAts(
   return (data?.data as AtsScore) ?? null;
 }
 
-/** POST /api/templates/{id}/pdf — download PDF blob */
+/** Download a template via the preview endpoint (renders HTML, opens print dialog). */
 export async function downloadPdf(
   templateId: number | string,
   body: Record<string, unknown>,
-  filename = 'Resume.pdf',
+  _filename = 'Resume.pdf',
 ): Promise<void> {
-  const response = await resumeApiClient.post(
-    `/api/templates/${templateId}/pdf`,
-    body,
-    { responseType: 'blob' },
-  );
-  const blob = new Blob([response.data], { type: 'application/pdf' });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
+  const uploadId = body?.upload_id;
+  if (uploadId) {
+    const url = templatePreviewUrl(templateId, String(uploadId));
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Preview failed: ${res.status}`);
+    const html = await res.text();
+    openHtmlPrintWindow(html);
+    return;
+  }
+  throw new Error('PDF generation requires upload_id');
 }
 
 // ============================================================
@@ -358,27 +355,20 @@ export function openHtmlWindow(html: string): boolean {
 }
 
 /**
- * Render and open browser print dialog for "Save as PDF".
- * Falls back from server PDF to browser print.
+ * Open preview URL in a new tab as final fallback.
  */
-export async function printTemplate(
-  templateId: number | string,
-  body: Record<string, unknown>,
-): Promise<boolean> {
+async function openPreviewFallback(templateId: number | string, body: Record<string, unknown>): Promise<boolean> {
   try {
-    await downloadPdf(templateId, body);
-    return true;
-  } catch {
-    try {
-      const html = await renderTemplateHtml(templateId, body);
-      return openHtmlPrintWindow(html);
-    } catch {
-      return false;
+    const uploadId = body?.upload_id;
+    if (uploadId && typeof window !== 'undefined') {
+      window.open(templatePreviewUrl(templateId, String(uploadId)), '_blank');
+      return true;
     }
-  }
+  } catch { /* ignore */ }
+  return false;
 }
 
-/** Try server PDF download first, fall back to print */
+/** Try to download — uses GET /preview (reliable) when upload_id is available. */
 export async function downloadTemplatePdf(
   templateId: number | string,
   body: Record<string, unknown>,
@@ -387,8 +377,21 @@ export async function downloadTemplatePdf(
   try {
     await downloadPdf(templateId, body, filename);
   } catch {
-    const ok = await printTemplate(templateId, body);
+    const ok = await openPreviewFallback(templateId, body);
     if (!ok) throw new Error('PDF generation unavailable');
+  }
+}
+
+/** Alias kept for compatibility — delegates to downloadTemplatePdf */
+export async function printTemplate(
+  templateId: number | string,
+  body: Record<string, unknown>,
+): Promise<boolean> {
+  try {
+    await downloadPdf(templateId, body);
+    return true;
+  } catch {
+    return openPreviewFallback(templateId, body);
   }
 }
 
