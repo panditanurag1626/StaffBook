@@ -5,7 +5,7 @@ import Card from '../shared/Card';
 import { resumeApiClient } from '@/services/resumeApi';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+
 
 // AI parsing can take up to 2 minutes for large/complex resumes.
 const UPLOAD_TIMEOUT = 120_000;
@@ -21,9 +21,6 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
   const [elapsed, setElapsed] = useState(0);
   const [failedFile, setFailedFile] = useState<File | null>(null);
   const { user } = useAuth();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
 
   // Elapsed-seconds timer while uploading
   useEffect(() => {
@@ -52,17 +49,10 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
   };
 
   const navigateToBuilder = (uploadId: string | number) => {
-    const currentParams = typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search)
-      : new URLSearchParams(searchParams?.toString() || '');
-    currentParams.set('resumeTab', 'builder');
-    currentParams.set('upload_id', uploadId.toString());
-    const url = `${pathname}?${currentParams.toString()}`;
-    try {
-      router.push(url);
-    } catch {
-      window.location.href = url;
-    }
+    const params = new URLSearchParams(window.location.search);
+    params.set('resumeTab', 'builder');
+    params.set('upload_id', uploadId.toString());
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
   };
 
   const doUpload = async (file: File) => {
