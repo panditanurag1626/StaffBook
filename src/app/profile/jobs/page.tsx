@@ -975,7 +975,7 @@ function JobManagementContent() {
     candidateName: string
   ) => {
     try {
-      const res = await fetch(`/api/resume/${encodeURIComponent(resumeId)}`, {
+      const res = await fetch(`/api/proxy/resume/${encodeURIComponent(resumeId)}`, {
         headers: { "x-user-email": user?.email ?? "" },
       });
       if (!res.ok) {

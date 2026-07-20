@@ -17,6 +17,10 @@ async function proxy(request: NextRequest): Promise<NextResponse> {
     if (authHeader) {
       init.headers["Authorization"] = authHeader;
     }
+    const userEmail = request.headers.get("x-user-email");
+    if (userEmail) {
+      init.headers["x-user-email"] = userEmail;
+    }
 
     if (request.method !== "GET" && request.method !== "HEAD") {
       const body = await request.arrayBuffer();
