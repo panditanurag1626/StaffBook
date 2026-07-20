@@ -101,6 +101,14 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
   >("versions");
   const [resumeRefreshKey, setResumeRefreshKey] = useState(0);
 
+  const handleUploadSuccess = (uploadId: string | number) => {
+    setActiveTab("builder");
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(queryParam, "builder");
+    params.set("upload_id", uploadId.toString());
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
   const handleTabChange = (tab: string) => {
     // Limit free users to 3 resumes
     if (tab === "builder" || tab === "uploadBuilder") {
@@ -325,7 +333,7 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
           <div className="mt-6">
             <BackButton />
           </div>
-          <UploadResumeCard />
+          <UploadResumeCard onUploadSuccess={handleUploadSuccess} />
         </div>
       )}
 

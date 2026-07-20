@@ -12,9 +12,10 @@ const UPLOAD_TIMEOUT = 120_000;
 
 interface UploadResumeCardProps {
   onClick?: () => void;
+  onUploadSuccess?: (uploadId: string | number) => void;
 }
 
-const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
+const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick, onUploadSuccess }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastFileRef = useRef<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -52,6 +53,10 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
   };
 
   const navigateToBuilder = (uploadId: string | number) => {
+    if (onUploadSuccess) {
+      onUploadSuccess(uploadId);
+      return;
+    }
     const params = new URLSearchParams(searchParams.toString());
     params.set('resumeTab', 'builder');
     params.set('upload_id', uploadId.toString());
