@@ -3,11 +3,10 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
-  FiZap, FiArrowRight, FiTarget, FiEye, FiUsers, FiBriefcase,
-  FiSearch, FiMessageCircle, FiFileText, FiGlobe, FiLayers,
-  FiCpu, FiHeart, FiStar, FiShield, FiTrendingUp, FiAward,
-  FiCheck, FiChevronRight, FiPlay, FiUserCheck, FiSend,
-  FiBookOpen, FiCompass, FiCode, FiHelpCircle, FiMapPin
+  FiZap, FiArrowRight, FiTarget, FiEye, FiUsers,
+  FiMessageCircle,
+  FiCpu, FiHeart, FiStar, FiShield, FiTrendingUp,
+  FiCheck, FiCompass, FiMapPin
 } from 'react-icons/fi'
 
 function useInView(threshold = 0.15) {
@@ -39,39 +38,6 @@ function FadeUp({ children, className = '', delay = 0 }: { children: React.React
   )
 }
 
-function StatCard({ value, label, icon: Icon }: { value: string; label: string; icon: React.ElementType }) {
-  const [ref, inView] = useInView()
-  const [count, setCount] = useState(0)
-  const numValue = parseInt(value.replace(/[^0-9]/g, ''))
-  const suffix = value.replace(/[0-9]/g, '')
-
-  useEffect(() => {
-    if (!inView) return
-    let start = 0
-    const duration = 2000
-    const step = Math.ceil(numValue / 60)
-    const timer = setInterval(() => {
-      start += step
-      if (start >= numValue) { setCount(numValue); clearInterval(timer) }
-      else setCount(start)
-    }, duration / 60)
-    return () => clearInterval(timer)
-  }, [inView, numValue])
-
-  return (
-    <div ref={ref} className="relative group">
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-indigo-600/5 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500" />
-      <div className="relative bg-white/80 backdrop-blur-sm border border-purple-100/50 rounded-2xl p-5 sm:p-6 text-center hover:shadow-lg hover:shadow-purple-500/5 transition-all duration-300 hover:-translate-y-1">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center mx-auto mb-3 shadow-md shadow-purple-500/20">
-          <Icon className="w-5 h-5 text-white" />
-        </div>
-        <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">{count}{suffix}</div>
-        <div className="text-xs text-gray-500 font-medium">{label}</div>
-      </div>
-    </div>
-  )
-}
-
 function ValueCard({ icon: Icon, title, description, delay }: { icon: React.ElementType; title: string; description: string; delay: number }) {
   return (
     <FadeUp delay={delay}>
@@ -89,71 +55,7 @@ function ValueCard({ icon: Icon, title, description, delay }: { icon: React.Elem
   )
 }
 
-function TimelineItem({ year, title, description, index }: { year: string; title: string; description: string; index: number }) {
-  return (
-    <FadeUp delay={index * 100}>
-      <div className="relative pl-8 pb-8 last:pb-0 group">
-        <div className="absolute left-[11px] top-2 bottom-0 w-px bg-gradient-to-b from-purple-300 to-transparent group-last:hidden" />
-        <div className="absolute left-0 top-1.5 w-[22px] h-[22px] rounded-full bg-white border-2 border-purple-300 flex items-center justify-center group-hover:border-purple-500 group-hover:shadow-md group-hover:shadow-purple-500/20 transition-all duration-300">
-          <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-        </div>
-        <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">{year}</span>
-        <h3 className="text-sm font-bold text-gray-900 mt-0.5">{title}</h3>
-        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{description}</p>
-      </div>
-    </FadeUp>
-  )
-}
-
-function TestimonialCard({ quote, name, role, delay }: { quote: string; name: string; role: string; delay: number }) {
-  return (
-    <FadeUp delay={delay}>
-      <div className="bg-white border border-purple-100/50 rounded-xl p-4 sm:p-5 hover:shadow-lg hover:shadow-purple-500/5 transition-all duration-300 h-full flex flex-col">
-        <div className="flex gap-0.5 mb-3">
-          {[...Array(5)].map((_, i) => (
-            <svg key={i} className="w-3 h-3 text-yellow-400 fill-current" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-          ))}
-        </div>
-        <p className="text-xs text-gray-600 leading-relaxed italic flex-1">&ldquo;{quote}&rdquo;</p>
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <p className="text-xs font-bold text-gray-900">{name}</p>
-          <p className="text-[10px] text-gray-500">{role}</p>
-        </div>
-      </div>
-    </FadeUp>
-  )
-}
-
-function FAQItem({ question, answer }: { question: string; answer: string }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="border border-purple-100/50 rounded-lg overflow-hidden transition-all duration-300 hover:shadow-sm">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-3 sm:p-4 text-left bg-white hover:bg-purple-50/30 transition-colors"
-      >
-        <span className="text-xs sm:text-sm font-semibold text-gray-900 pr-3">{question}</span>
-        <FiChevronRight className={`w-4 h-4 text-purple-500 transition-transform duration-300 flex-shrink-0 ${open ? 'rotate-90' : ''}`} />
-      </button>
-      <div className={`grid transition-all duration-300 ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-        <div className="overflow-hidden">
-          <p className="px-3 sm:px-4 pb-3 sm:pb-4 text-xs text-gray-500 leading-relaxed">{answer}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function AboutPage() {
-  const stats = [
-    { value: '500K+', label: 'Active Users', icon: FiUsers },
-    { value: '50K+', label: 'Employers', icon: FiBriefcase },
-    { value: '1M+', label: 'Jobs Posted', icon: FiSend },
-    { value: '100K+', label: 'Recruiters', icon: FiUserCheck },
-  ]
-
   const values = [
     { icon: FiZap, title: 'Innovation', description: 'We push boundaries with AI-driven recruitment technology, constantly evolving to make hiring smarter, faster, and more intuitive for everyone.' },
     { icon: FiShield, title: 'Trust', description: 'Trust is our foundation. We ensure transparent, secure interactions between job seekers and employers, building lasting professional relationships.' },
@@ -161,50 +63,6 @@ export default function AboutPage() {
     { icon: FiTrendingUp, title: 'Growth', description: 'We empower professionals to advance their careers and help businesses grow by connecting them with the right talent at the right time.' },
     { icon: FiHeart, title: 'Diversity', description: 'We champion inclusive hiring practices, creating equal opportunities for talents from all backgrounds, cultures, and experiences.' },
     { icon: FiStar, title: 'Excellence', description: 'We strive for excellence in every interaction, delivering premium experiences that exceed expectations for both employers and job seekers.' },
-  ]
-
-  const features = [
-    { icon: FiCpu, title: 'AI-Powered Matching', description: 'Our intelligent algorithms analyze skills, experience, and preferences to deliver the most relevant job matches and candidate recommendations.' },
-    { icon: FiMessageCircle, title: 'Live Chat with Recruiters', description: 'Connect instantly with recruiters through real-time messaging, making the hiring process faster and more personal.' },
-    { icon: FiSearch, title: 'Nearby Job Discovery', description: 'Find opportunities near you with our location-based job search. Discover hidden gems in your local job market.' },
-    { icon: FiFileText, title: 'ATS-Friendly Resume Builder', description: 'Create professional, ATS-optimized resumes that pass through applicant tracking systems and catch recruiters\' attention.' },
-    { icon: FiGlobe, title: 'Professional Networking', description: 'Build meaningful professional connections, share insights, and grow your network with industry peers and leaders.' },
-    { icon: FiLayers, title: 'Comprehensive Dashboard', description: 'Track applications, manage interviews, and monitor your job search progress with powerful analytics and insights.' },
-  ]
-
-  const steps = [
-    { icon: FiUserCheck, title: 'Create Your Profile', description: 'Sign up and build a comprehensive profile showcasing your skills, experience, and career aspirations.' },
-    { icon: FiSearch, title: 'Discover Opportunities', description: 'Browse thousands of job listings, get AI-powered recommendations, and receive personalized job alerts.' },
-    { icon: FiMessageCircle, title: 'Connect & Apply', description: 'Apply with one click, chat directly with recruiters, and schedule interviews seamlessly.' },
-    { icon: FiBriefcase, title: 'Grow Your Career', description: 'Accept offers, build your professional network, and continue advancing with new opportunities.' },
-  ]
-
-  const testimonials = [
-    { quote: 'Staff Book completely transformed my job search. The AI matching found roles I would have never discovered on my own. I landed my dream job within two weeks!', name: 'Priya Sharma', role: 'Software Engineer at Google' },
-    { quote: 'As a recruiter, Staff Book has been a game-changer. The quality of candidates and the ease of communication through live chat has reduced our hiring time by 60%.', name: 'Rajesh Kumar', role: 'HR Director at TCS' },
-    { quote: 'The resume builder alone is worth it. My ATS-friendly resume got me 5x more interview calls. The networking features are incredible too!', name: 'Ananya Patel', role: 'Product Manager at Amazon' },
-    { quote: 'We found our best hires through Staff Book. The nearby job discovery feature helped us connect with local talent we were missing on other platforms.', name: 'Vikram Singh', role: 'CEO at InnovateTech' },
-  ]
-
-  const faqs = [
-    { question: 'What is Staff Book?', answer: 'Staff Book is India\'s first AI-powered recruitment, hiring, professional networking, and career platform that connects employers, recruiters, and job seekers through innovative technology and real-time communication.' },
-    { question: 'Is Staff Book free to use?', answer: 'Yes! Staff Book offers a free starter plan for both job seekers and employers. Premium plans with additional features like enhanced visibility, unlimited contacts, and advanced analytics are available for those looking to accelerate their hiring or job search.' },
-    { question: 'How does the AI job matching work?', answer: 'Our AI analyzes your profile, skills, experience, preferences, and behavior patterns to match you with the most relevant job opportunities. The more you use Staff Book, the smarter and more personalized your recommendations become.' },
-    { question: 'Can I chat with recruiters directly?', answer: 'Absolutely! Staff Book\'s built-in live chat feature allows job seekers to connect directly with recruiters in real-time, making the hiring process faster, more transparent, and more personal.' },
-    { question: 'What makes Staff Book different from other job portals?', answer: 'Staff Book combines AI-powered job matching, live chat with recruiters, nearby job discovery, ATS-friendly resume building, and professional networking — all in one seamless platform. Our hyperlocal approach and real-time communication features set us apart.' },
-    { question: 'How do I create an ATS-friendly resume?', answer: 'Staff Book\'s built-in resume builder is designed to create resumes that pass through Applicant Tracking Systems (ATS). Simply fill in your details, choose a professional template, and download your optimized resume instantly.' },
-  ]
-
-  const whyCompanies = [
-    { icon: FiTarget, title: 'Access Premium Talent', description: 'Reach highly qualified candidates who are actively looking and those who are open to the right opportunity.' },
-    { icon: FiZap, title: 'AI-Powered Screening', description: 'Save time with intelligent candidate screening that shortlists the most relevant applicants based on your requirements.' },
-    { icon: FiMessageCircle, title: 'Direct Communication', description: 'Chat with candidates in real-time, schedule interviews instantly, and make hiring decisions faster.' },
-  ]
-
-  const whyJobSeekers = [
-    { icon: FiStar, title: 'Personalized Job Alerts', description: 'Receive job recommendations tailored to your skills, experience, and career goals — no more irrelevant listings.' },
-    { icon: FiSend, title: 'One-Click Apply', description: 'Apply to jobs with a single click. Your profile is your resume, making the application process effortless.' },
-    { icon: FiUsers, title: 'Build Your Network', description: 'Connect with industry professionals, join discussions, and grow your career through meaningful relationships.' },
   ]
 
   const team = [
@@ -247,13 +105,6 @@ export default function AboutPage() {
                 >
                   Get Started Free
                   <FiArrowRight className="w-3.5 h-3.5" />
-                </Link>
-                <Link
-                  href="#how-it-works"
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-sm font-semibold text-gray-700 bg-white border border-gray-200 hover:border-purple-200 hover:shadow-md hover:text-purple-700 transition-all duration-300"
-                >
-                  <FiPlay className="w-3.5 h-3.5" />
-                  See How It Works
                 </Link>
               </div>
             </div>
@@ -373,56 +224,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ===== 4. Our Story ===== */}
-      <section id="our-story" className="py-12 sm:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100/80 text-purple-700 text-[10px] font-semibold uppercase tracking-wider mb-3">
-                <FiBookOpen className="w-2.5 h-2.5" />
-                Our Story
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">The Journey So Far</h2>
-              <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
-                From a bold idea to a platform transforming India&apos;s recruitment landscape — our story is one of passion, persistence, and purpose.
-              </p>
-            </div>
-          </FadeUp>
-          <div className="max-w-3xl mx-auto">
-            <TimelineItem
-              year="2020"
-              title="The Beginning"
-              description="Staff Book was founded with a vision to revolutionize India's recruitment industry. Our founders recognized the gap between traditional hiring methods and the needs of a digital-first workforce."
-              index={0}
-            />
-            <TimelineItem
-              year="2021"
-              title="Platform Launch"
-              description="We launched our beta platform with AI-powered job matching and real-time chat capabilities, quickly gaining traction among early adopters and forward-thinking companies."
-              index={1}
-            />
-            <TimelineItem
-              year="2022"
-              title="Rapid Growth"
-              description="Staff Book crossed 100,000 users and 10,000 employers. We introduced our ATS-friendly resume builder, networking features, and hyperlocal job discovery."
-              index={2}
-            />
-            <TimelineItem
-              year="2023"
-              title="Market Leadership"
-              description="With 500K+ users and 50K+ employers, Staff Book became India's fastest-growing recruitment platform. We expanded our AI capabilities and launched premium features."
-              index={3}
-            />
-            <TimelineItem
-              year="2024"
-              title="Continued Innovation"
-              description="We introduced advanced analytics, meeting scheduling, and enhanced networking. Our platform now supports millions of job applications and connections every month."
-              index={4}
-            />
-          </div>
-        </div>
-      </section>
-
       {/* ===== 5. Why Choose Staff Book ===== */}
       <section className="py-12 sm:py-16 bg-gradient-to-br from-purple-50/50 via-indigo-50/30 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -461,29 +262,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ===== 6. Platform Statistics ===== */}
-      <section className="py-12 sm:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100/80 text-purple-700 text-[10px] font-semibold uppercase tracking-wider mb-3">
-                <FiAward className="w-2.5 h-2.5" />
-                Platform Statistics
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Our Impact in Numbers</h2>
-              <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
-                We are proud of the trust millions of users and businesses have placed in us.
-              </p>
-            </div>
-          </FadeUp>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((stat, i) => (
-              <StatCard key={i} {...stat} />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ===== 7. Core Values ===== */}
       <section className="py-12 sm:py-16 bg-gradient-to-br from-purple-50/50 via-indigo-50/30 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -502,72 +280,6 @@ export default function AboutPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {values.map((v, i) => (
               <ValueCard key={i} {...v} delay={i * 100} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 8. Platform Features ===== */}
-      <section className="py-12 sm:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100/80 text-purple-700 text-[10px] font-semibold uppercase tracking-wider mb-3">
-                <FiLayers className="w-2.5 h-2.5" />
-                Platform Features
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Everything You Need to Succeed</h2>
-              <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
-                Powerful tools and features designed to make hiring and job searching effortless.
-              </p>
-            </div>
-          </FadeUp>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {features.map((f, i) => (
-              <FadeUp key={i} delay={i * 100}>
-                <div className="group relative bg-white border border-purple-100/50 rounded-xl p-4 hover:shadow-lg hover:shadow-purple-500/5 transition-all duration-300 hover:-translate-y-0.5 h-full">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center mb-3 shadow-md shadow-purple-500/20 group-hover:scale-110 transition-transform duration-300">
-                    <f.icon className="w-4 h-4 text-white" />
-                  </div>
-                  <h3 className="text-sm font-bold text-gray-900 mb-1">{f.title}</h3>
-                  <p className="text-xs text-gray-500 leading-relaxed">{f.description}</p>
-                </div>
-              </FadeUp>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 9. How It Works ===== */}
-      <section id="how-it-works" className="py-12 sm:py-16 bg-gradient-to-br from-purple-50/50 via-indigo-50/30 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100/80 text-purple-700 text-[10px] font-semibold uppercase tracking-wider mb-3">
-                <FiCode className="w-2.5 h-2.5" />
-                How Staff Book Works
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Your Journey to Success</h2>
-              <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
-                Get started in minutes and take control of your career journey.
-              </p>
-            </div>
-          </FadeUp>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {steps.map((step, i) => (
-              <FadeUp key={i} delay={i * 150}>
-                <div className="relative text-center group">
-                  <div className="absolute top-6 left-[60%] w-full h-px bg-gradient-to-r from-purple-300 to-transparent hidden lg:block group-last:hidden" />
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center mx-auto mb-3 shadow-md shadow-purple-500/20 group-hover:scale-110 transition-transform duration-300">
-                    <step.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="w-6 h-6 rounded-full bg-purple-100 border-2 border-purple-300 flex items-center justify-center mx-auto mb-3 -mt-1">
-                    <span className="text-[10px] font-bold text-purple-700">{i + 1}</span>
-                  </div>
-                  <h3 className="text-sm font-bold text-gray-900 mb-1">{step.title}</h3>
-                  <p className="text-xs text-gray-500 leading-relaxed max-w-xs mx-auto">{step.description}</p>
-                </div>
-              </FadeUp>
             ))}
           </div>
         </div>
@@ -600,54 +312,6 @@ export default function AboutPage() {
                   <h3 className="text-sm font-bold text-gray-900">{member.name}</h3>
                   <p className="text-xs text-gray-500 mt-0.5">{member.role}</p>
                 </div>
-              </FadeUp>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 11. Testimonials ===== */}
-      <section className="py-12 sm:py-16 bg-gradient-to-br from-purple-50/50 via-indigo-50/30 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100/80 text-purple-700 text-[10px] font-semibold uppercase tracking-wider mb-3">
-                <FiStar className="w-2.5 h-2.5" />
-                Testimonials
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Trusted by Thousands</h2>
-              <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
-                Hear from our community of professionals and businesses.
-              </p>
-            </div>
-          </FadeUp>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {testimonials.map((t, i) => (
-              <TestimonialCard key={i} {...t} delay={i * 100} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 12. FAQ ===== */}
-      <section className="py-12 sm:py-16">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100/80 text-purple-700 text-xs font-semibold uppercase tracking-wider mb-4">
-                <FiHelpCircle className="w-2.5 h-2.5" />
-                FAQs
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Frequently Asked Questions</h2>
-              <p className="mt-2 text-sm text-gray-500 max-w-2xl mx-auto">
-                Everything you need to know about Staff Book.
-              </p>
-            </div>
-          </FadeUp>
-          <div className="space-y-3">
-            {faqs.map((faq, i) => (
-              <FadeUp key={i} delay={i * 50}>
-                <FAQItem {...faq} />
               </FadeUp>
             ))}
           </div>

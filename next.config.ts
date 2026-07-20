@@ -38,12 +38,6 @@ const nextConfig: NextConfig = {
         destination: 'https://admin.staffbook.in/api/web/v1/:path*',
       },
     ];
-    // Only template previews go to Vercel (for real rendered designs).
-    // Everything else (upload, ATS, jsonresume, templates list) uses local route handler.
-    rules.push({
-      source: '/resume-api/api/templates/:id/preview',
-      destination: 'https://resume-pro-ebon.vercel.app/api/templates/:id/preview',
-    });
     return rules;
   },
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { resumeApiClient, templatePreviewUrl, printTemplate, downloadTemplatePdf } from '@/lib/api/resumeApi';
+import { resumeApiClient, templatePreviewUrl, printTemplate, downloadTemplatePdf } from '@/services/resumeApi';
 import { FALLBACK_TEMPLATES } from '@/lib/api/templates-fallback';
 import { THEME } from '../../styles/theme';
 import Card from '../shared/Card';
@@ -234,9 +234,6 @@ const ResumeTemplates: React.FC = () => {
     );
   }
 
-  const startIdx = (currentPage - 1) * TEMPLATES_PER_PAGE;
-  const displayTemplates = templates.slice(startIdx, startIdx + TEMPLATES_PER_PAGE);
-
   return (
     <div className={`space-y-6 ${THEME.layout.spacing.xl}`}>
       <div className="flex items-center justify-end">
@@ -246,7 +243,7 @@ const ResumeTemplates: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
-        {displayTemplates.map((template) => (
+        {templates.map((template) => (
           <Card
             key={template.id}
             hoverEffect

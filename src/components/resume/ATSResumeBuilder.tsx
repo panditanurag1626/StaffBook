@@ -36,7 +36,7 @@ import {
   openHtmlWindow,
   fetchAtsScore,
   AtsScore,
-} from "@/lib/api/resumeApi";
+} from "@/services/resumeApi";
 import toast from "react-hot-toast";
 import ResumeTemplates from "./ResumeTemplates";
 import { useAuth } from '@/context/AuthContext';
@@ -95,9 +95,15 @@ export default function ATSResumeBuilder() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const uploadId = searchParams.get('upload_id');
-  const resumeId = searchParams.get('resume_id');
-  const templateId = searchParams.get('template_id');
+  const [mounted, setMounted] = React.useState(false);
+
+  // Defer search param reads until after hydration so SSR and first client
+  // render produce identical HTML (prevents hydration mismatch).
+  React.useEffect(() => { setMounted(true); }, []);
+
+  const uploadId = !mounted ? null : searchParams.get('upload_id');
+  const resumeId = !mounted ? null : searchParams.get('resume_id');
+  const templateId = !mounted ? null : searchParams.get('template_id');
   const { user } = useAuth();
   const isPremium = user?.user_balance_job_seeker?.premium_designs_available === 1 || (user?.userBalance?.no_of_resume ?? 0) > 0;
 
@@ -118,6 +124,7 @@ export default function ATSResumeBuilder() {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [builderId, setBuilderId] = useState<number | null>(null);
+  const idCounter = useRef(0);
   const isEditMode = !!resumeId || !!builderId;
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
@@ -156,7 +163,7 @@ export default function ATSResumeBuilder() {
   const generateParsedDataPayload = (dataToUse: ResumeData = resumeData) => {
     const storageKey = uploadId ? `rawResumeData_${uploadId}` : null;
     let baseRawData: any = null;
-    if (storageKey) {
+    if (storageKey && typeof window !== 'undefined') {
       const raw = localStorage.getItem(storageKey);
       if (raw) {
         try {
@@ -304,18 +311,38 @@ export default function ATSResumeBuilder() {
   };
 
   // Current form state as the grouped payload the resume-api templates expect.
-  const getGroupedData = () => generateParsedDataPayload().data;
+  const getGroupedData = () => {
+    const data = generateParsedDataPayload().data;
+    // Remove empty arrays so templates don't render sections with no data
+    // (e.g. Awards, Volunteer, Publications). Keeps 0, false, null, "" etc.
+    const strip = (obj: Record<string, any>): Record<string, any> =>
+      Object.fromEntries(
+        Object.entries(obj).flatMap(([k, v]) => {
+          if (Array.isArray(v)) return v.length > 0 ? [[k, v]] : [];
+          if (v && typeof v === 'object' && !(v instanceof Date)) {
+            const cleaned = strip(v);
+            return Object.keys(cleaned).length > 0 ? [[k, cleaned]] : [];
+          }
+          return [[k, v]];
+        })
+      );
+    return strip(data);
+  };
 
   // Open the selected template, rendered with the current data, in a print
   // window so the user can "Save as PDF".
   const handleDownloadPdf = async () => {
-    if (!templateId) {
-      toast.error("Save your resume first. Template download is unavailable right now.");
-      return;
-    }
     const name = resumeData.personalInfo.fullName?.trim() || "Resume";
     const filename = `${name.replace(/\s+/g, "_")}_Resume.pdf`;
     const toastId = toast.loading("Generating your PDF...");
+
+    // No template selected — use the browser print dialog as fallback.
+    if (!templateId) {
+      openResumeWindow();
+      toast.dismiss(toastId);
+      return;
+    }
+
     try {
       await downloadTemplatePdf(templateId, { data: getGroupedData() }, filename);
       toast.success("Resume downloaded!", { id: toastId });
@@ -357,20 +384,35 @@ export default function ATSResumeBuilder() {
   const escHtml = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
   const openResumeWindow = () => {
+    if (typeof window === 'undefined') return;
     const p = resumeData.personalInfo || {} as any;
     const win = window.open('', '_blank');
     if (!win) { toast.error("Pop-up blocked"); return; }
+
+    // Try to read projects from localStorage (same key ResumePreview uses).
+    let rawProjects: any[] = [];
+    try {
+      const id = new URLSearchParams(window.location.search).get('upload_id');
+      if (id) {
+        const raw = localStorage.getItem('rawResumeData_' + id);
+        if (raw) rawProjects = JSON.parse(raw)?.data?.projects || [];
+      }
+    } catch { /* ignore */ }
+
     const sectionHtml = (label: string, content: string) => content ? `<div style="margin-bottom:14px"><h2 style="font-size:13px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #7c3aed;padding-bottom:4px;margin-bottom:6px">${label}</h2>${content}</div>` : '';
     const contactHtml = [p.email, p.phone, p.location].filter(Boolean).join(' &nbsp;|&nbsp; ');
+    const linkedinHtml = p.linkedin ? `<div>${escHtml(p.linkedin)}</div>` : '';
     const summaryHtml = resumeData.summary ? `<p style="font-size:13px;color:#4b5563;line-height:1.6;margin:0">${escHtml(resumeData.summary)}</p>` : '';
     const expHtml = (resumeData.experience || []).map(e => e?.title || e?.company ? `<div style="margin-bottom:8px"><div style="font-weight:600;font-size:13px;color:#111827">${escHtml(e.title || '')}</div><div style="color:#6b7280;font-size:12px">${[e.company, e.startDate ? `${e.startDate} – ${e.current ? 'Present' : e.endDate || ''}` : ''].filter(Boolean).join(' · ')}</div>${e.description ? `<div style="font-size:12px;color:#4b5563;margin-top:2px;line-height:1.5">${escHtml(e.description)}</div>` : ''}</div>` : '').filter(Boolean).join('');
     const eduHtml = (resumeData.education || []).map(e => e?.degree || e?.institution ? `<div style="margin-bottom:4px"><div style="font-weight:600;font-size:13px;color:#111827">${escHtml(e.degree || '')}</div><div style="color:#6b7280;font-size:12px">${[e.institution, e.graduationDate].filter(Boolean).join(' · ')}${e.gpa ? ` · <span style="font-weight:500">GPA: ${escHtml(e.gpa)}</span>` : ''}</div></div>` : '').filter(Boolean).join('');
     const skillsHtml = (resumeData.skills || []).length ? resumeData.skills.map(s => escHtml(s)).join(' &middot; ') : '';
-    const hasData = p.fullName || contactHtml || summaryHtml || expHtml || eduHtml || skillsHtml;
+    const projHtml = rawProjects.map((pr: any) => pr.name || pr.title ? `<div style="margin-bottom:8px"><div style="font-weight:600;font-size:13px;color:#111827">${escHtml(pr.name || pr.title)}</div><div style="color:#6b7280;font-size:12px">${[pr.start_date, pr.end_date || 'Present'].filter(Boolean).join(' – ')}</div>${pr.description ? `<div style="font-size:12px;color:#4b5563;margin-top:2px;line-height:1.5">${escHtml(pr.description)}</div>` : ''}${(pr.highlights||[]).length ? pr.highlights.map((h: string) => `<div style="font-size:11px;color:#555;margin:1px 0 1px 16px">– ${escHtml(h)}</div>`).join('') : ''}</div>` : '').filter(Boolean).join('');
+    const certHtml = (resumeData.certifications || []).map(c => c.name ? `<div style="margin-bottom:4px;font-size:12px"><strong>${escHtml(c.name)}</strong>${c.issuer ? ' — '+escHtml(c.issuer) : ''}${c.date ? ' · '+c.date : ''}</div>` : '').filter(Boolean).join('');
+    const hasData = p.fullName || contactHtml || summaryHtml || expHtml || eduHtml || skillsHtml || projHtml || certHtml;
     const bodyContent = hasData
-      ? `<div class="page"><div class="header"><h1>${escHtml(p.fullName || 'Resume')}</h1>${resumeData.experience?.[0]?.title ? `<div class="title">${escHtml(resumeData.experience[0].title)}</div>` : ''}${contactHtml ? `<div class="contact">${contactHtml}</div>` : ''}</div>${sectionHtml('Professional Summary', summaryHtml)}${sectionHtml('Experience', expHtml)}${sectionHtml('Education', eduHtml)}${sectionHtml('Skills', skillsHtml)}</div>`
+      ? `<div class="page"><div class="header"><h1>${escHtml(p.fullName || 'Resume')}</h1>${resumeData.experience?.[0]?.title ? `<div class="title">${escHtml(resumeData.experience[0].title)}</div>` : ''}${contactHtml ? `<div class="contact">${contactHtml}</div>` : ''}${linkedinHtml ? `<div class="contact" style="margin-top:2px">${linkedinHtml}</div>` : ''}</div>${sectionHtml('Professional Summary', summaryHtml)}${sectionHtml('Experience', expHtml)}${sectionHtml('Education', eduHtml)}${sectionHtml('Skills', skillsHtml)}${sectionHtml('Projects', projHtml)}${sectionHtml('Certifications', certHtml)}</div>`
       : `<div class="page" style="text-align:center;padding:80px 48px"><div style="font-size:48px;margin-bottom:16px">📄</div><h2 style="color:#374151;margin-bottom:8px">No Resume Data</h2><p style="color:#6b7280;font-size:14px;line-height:1.6">Fill in your details in the Resume Builder and click <strong>Save</strong>.<br>Then open the preview again to see your completed resume.</p></div>`;
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escHtml(p.fullName || 'Resume')} - Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Segoe UI,sans-serif;background:#f3f4f6;display:flex;justify-content:center;padding:40px 16px}.page{max-width:800px;width:100%;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:40px 48px;border-radius:4px}.header{margin-bottom:20px}.header h1{font-size:26px;font-weight:700;color:#111827;margin:0;line-height:1.2}.header .title{font-size:14px;color:#6b7280;margin-top:2px}.header .contact{font-size:13px;color:#6b7280;margin-top:4px}</style></head><body>${bodyContent}</body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escHtml(p.fullName || 'Resume')} - Preview</title><style>@page{size:A4;margin:15mm}*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Segoe UI,sans-serif;background:#f3f4f6;display:flex;justify-content:center;padding:40px 16px}@media print{body{background:#fff;padding:0}}@media screen{.page{max-width:800px;width:100%;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:40px 48px;border-radius:4px}}.header{margin-bottom:20px}.header h1{font-size:26px;font-weight:700;color:#111827;margin:0;line-height:1.2}.header .title{font-size:14px;color:#6b7280;margin-top:2px}.header .contact{font-size:13px;color:#6b7280;margin-top:4px}</style></head><body>${bodyContent}</body></html>`;
     try { win.document.write(html); win.document.close(); } catch (e) { toast.error("Failed to open preview"); }
   };
 
@@ -546,7 +588,7 @@ export default function ATSResumeBuilder() {
           },
           summary: isJsonResume ? (parsed.basics?.summary || "") : (parsed.summary || ""),
           experience: (isJsonResume ? (parsed.work || []) : (parsed.experience || [])).map((exp: any) => ({
-            id: exp.id || Date.now().toString() + Math.random().toString(),
+            id: exp.id || `exp_${++idCounter.current}`,
             title: exp.position || exp.title || exp.job_title || "",
             company: exp.name || exp.company || "",
             location: exp.location || "",
@@ -558,7 +600,7 @@ export default function ATSResumeBuilder() {
               : (exp.description || exp.summary || ""),
           })),
           education: (parsed.education || []).map((edu: any) => ({
-            id: edu.id || Date.now().toString() + Math.random().toString(),
+            id: edu.id || `edu_${++idCounter.current}`,
             degree: edu.studyType || edu.degree || "",
             institution: edu.institution || "",
             location: edu.location || "",
@@ -569,7 +611,7 @@ export default function ATSResumeBuilder() {
             ? (parsed.skills?.[0]?.keywords || [])
             : (Array.isArray(parsed.skills) ? parsed.skills.map((s: any) => s.name || s) : []),
           certifications: (isJsonResume ? (parsed.certificates || []) : (parsed.certifications || [])).map((cert: any) => ({
-            id: cert.id || Date.now().toString() + Math.random().toString(),
+            id: cert.id || `cert_${++idCounter.current}`,
             name: cert.name || "",
             issuer: cert.issuer || cert.issuing_organization || "",
             date: cert.date || cert.date_obtained || "",
@@ -608,22 +650,23 @@ export default function ATSResumeBuilder() {
 
   // Unified score view: prefer the real API analysis, fall back to the local
   // heuristic. Category values are normalised to 0-100 either way.
-  const atsView = apiAtsScore
+  const hasApiScore = apiAtsScore && typeof apiAtsScore.overall_score === 'number' && apiAtsScore.overall_score > 0;
+  const atsView = hasApiScore
     ? {
         isApi: true,
-        score: apiAtsScore.overall_score,
+        score: apiAtsScore!.overall_score,
         categories: [
-          { label: "Contact", value: apiAtsScore.breakdown.contact_info },
-          { label: "Summary", value: apiAtsScore.breakdown.summary },
-          { label: "Experience", value: apiAtsScore.breakdown.work_experience },
-          { label: "Quantify", value: apiAtsScore.breakdown.quantification },
-          { label: "Skills", value: apiAtsScore.breakdown.skills },
-          { label: "Education", value: apiAtsScore.breakdown.education },
-          { label: "Projects", value: apiAtsScore.breakdown.projects },
-          { label: "Certs", value: apiAtsScore.breakdown.certifications },
+          { label: "Contact", value: apiAtsScore.breakdown?.contact_info ?? 0 },
+          { label: "Summary", value: apiAtsScore.breakdown?.summary ?? 0 },
+          { label: "Experience", value: apiAtsScore.breakdown?.work_experience ?? 0 },
+          { label: "Quantify", value: apiAtsScore.breakdown?.quantification ?? 0 },
+          { label: "Skills", value: apiAtsScore.breakdown?.skills ?? 0 },
+          { label: "Education", value: apiAtsScore.breakdown?.education ?? 0 },
+          { label: "Projects", value: apiAtsScore.breakdown?.projects ?? 0 },
+          { label: "Certs", value: apiAtsScore.breakdown?.certifications ?? 0 },
         ],
         issues: [] as string[],
-        suggestions: apiAtsScore.feedback || [],
+        suggestions: apiAtsScore.feedback ?? [],
       }
     : {
         isApi: false,
@@ -1044,11 +1087,9 @@ function LivePreview({
   const [html, setHtml] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
-  const loadedRef = useRef(false);
   const dataKey = JSON.stringify(groupedData);
 
   React.useEffect(() => {
-    if (loadedRef.current) return;
     let cancelled = false;
     setLoading(true);
     const handle = setTimeout(async () => {
@@ -1056,12 +1097,12 @@ function LivePreview({
         const raw = await fetchTemplateHtml(templateId, JSON.parse(dataKey));
         if (!cancelled) {
           setHtml(withResumeApiBase(raw));
-          loadedRef.current = true;
+          setFailed(false);
         }
       } catch (err) {
         if (!cancelled) {
           setFailed(true);
-          loadedRef.current = true;
+          setHtml("");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -1102,29 +1143,77 @@ function LivePreview({
 }
 
 function FallbackPreview({ groupedData, scale }: { groupedData: any; scale: number }) {
-  const data = groupedData?.data || groupedData;
-  const p = data?.personalInfo || {};
+  const raw = groupedData?.data || groupedData;
+  // Normalise parsed-format fields (personal_information, work_experience, …)
+  // to builder-format so the same render code works regardless of input shape.
+  const pi = raw.personalInfo || raw.personal_information || {};
+  const exp = raw.experience || raw.work_experience || [];
+  const edu = raw.education || [];
+  const skl = raw.skills || [];
+  const cert = raw.certifications || [];
+  const proj = raw.projects || [];
+  const p = {
+    fullName: pi.fullName || pi.full_name || '',
+    email: pi.email || '',
+    phone: pi.phone || '',
+    location: pi.location || '',
+    linkedin: pi.linkedin || pi.linkedin_profile || '',
+    portfolio: pi.portfolio || pi.portfolio_website || pi.website || '',
+  };
+  const summary = raw.summary || raw.professional_summary || '';
   const sections: string[] = [];
-  sections.push(`<table style="width:100%;border-collapse:collapse"><tr><td style="width:70%"><h1 style="font-size:20px;font-weight:700;margin:0">${p.fullName || 'Resume'}</h1><div style="color:#555;font-size:12px;margin:2px 0">${data?.experience?.[0]?.title || ''}</div><div style="color:#888;font-size:11px;margin:2px 0">${[p.email, p.phone, p.location].filter(Boolean).join(' | ')}</div></td><td style="width:30%;text-align:right;vertical-align:top;font-size:11px;color:#888">${[p.linkedin, p.portfolio].filter(Boolean).join('<br>')}</td></tr></table>`);
+  sections.push(`<table style="width:100%;border-collapse:collapse"><tr><td style="width:70%"><h1 style="font-size:20px;font-weight:700;margin:0">${p.fullName || 'Resume'}</h1><div style="color:#555;font-size:12px;margin:2px 0">${exp?.[0]?.title || exp?.[0]?.job_title || ''}</div><div style="color:#888;font-size:11px;margin:2px 0">${[p.email, p.phone, p.location].filter(Boolean).join(' | ')}</div></td><td style="width:30%;text-align:right;vertical-align:top;font-size:11px;color:#888">${[p.linkedin, p.portfolio].filter(Boolean).join('<br>')}</td></tr></table>`);
   sections.push(`<hr style="border:none;border-top:2px solid #7c3aed;margin:8px 0">`);
-  if (data?.summary) sections.push(`<h2 style="font-size:13px;font-weight:600;margin:8px 0 4px;color:#333">Professional Summary</h2><p style="font-size:11px;color:#555;line-height:1.5;margin:0">${data.summary}</p>`);
-  if (data?.experience?.length) {
+  if (summary) sections.push(`<h2 style="font-size:13px;font-weight:600;margin:8px 0 4px;color:#333">Professional Summary</h2><p style="font-size:11px;color:#555;line-height:1.5;margin:0">${summary}</p>`);
+  if (exp.length) {
     sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Experience</h2>`);
-    data.experience.forEach((e: any) => sections.push(`<div style="margin:4px 0"><div style="font-weight:600;font-size:12px">${e.title || ''}${e.company ? ' <span style="font-weight:400;color:#666">at '+e.company+'</span>' : ''}</div><div style="color:#888;font-size:10px">${[e.startDate, e.current ? 'Present' : e.endDate].filter(Boolean).join(' – ')}${e.location ? ' · '+e.location : ''}</div><div style="font-size:11px;color:#444;margin:2px 0">${e.description || ''}</div></div>`));
+    exp.forEach((e: any) => sections.push(`<div style="margin:4px 0"><div style="font-weight:600;font-size:12px">${e.title || e.job_title || ''}${e.company ? ' <span style="font-weight:400;color:#666">at '+e.company+'</span>' : ''}</div><div style="color:#888;font-size:10px">${[e.startDate || e.start_date, e.current ? 'Present' : (e.endDate || e.end_date)].filter(Boolean).join(' – ')}${e.location ? ' · '+e.location : ''}</div><div style="font-size:11px;color:#444;margin:2px 0">${e.description || e.summary || e.responsibilities?.join('\n') || ''}</div></div>`));
   }
-  if (data?.education?.length) {
+  if (edu.length) {
     sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Education</h2>`);
-    data.education.forEach((e: any) => sections.push(`<div style="margin:4px 0"><div style="font-weight:600;font-size:12px">${e.degree || ''}${e.institution ? ' — '+e.institution : ''}</div><div style="color:#888;font-size:10px">${[e.graduationDate, e.gpa ? 'GPA: '+e.gpa : ''].filter(Boolean).join(' · ')}</div></div>`));
+    edu.forEach((e: any) => sections.push(`<div style="margin:4px 0"><div style="font-weight:600;font-size:12px">${e.degree || ''}${e.institution ? ' — '+e.institution : ''}</div><div style="color:#888;font-size:10px">${[e.graduationDate || e.endDate || e.end_year, e.gpa || e.grade ? 'GPA: '+(e.gpa||e.grade) : ''].filter(Boolean).join(' · ')}</div></div>`));
   }
-  if (data?.skills?.length) sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Skills</h2><div style="font-size:11px;color:#444">${Array.isArray(data.skills) ? data.skills.map((s:any) => s.name || s).join(' · ') : ''}</div>`);
-  if (data?.certifications?.length) {
+  if (skl.length) sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Skills</h2><div style="font-size:11px;color:#444">${Array.isArray(skl) ? skl.map((s:any) => s.name || s).join(' · ') : ''}</div>`);
+  if (proj.length) {
+    sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Projects</h2>`);
+    proj.forEach((pr: any) => sections.push(`<div style="margin:4px 0"><div style="font-weight:600;font-size:12px">${pr.name || pr.title || ''}</div><div style="color:#888;font-size:10px">${[pr.start_date, pr.end_date || 'Present'].filter(Boolean).join(' – ')}</div><div style="font-size:11px;color:#444;margin:2px 0">${pr.description || ''}</div>${(pr.highlights||[]).length ? pr.highlights.map((h: string) => `<div style="font-size:11px;color:#555;margin:1px 0 1px 12px">– ${h}</div>`).join('') : ''}</div>`));
+  }
+  if (cert.length) {
     sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Certifications</h2>`);
-    data.certifications.forEach((c: any) => sections.push(`<div style="font-size:11px;margin:2px 0"><strong>${c.name || ''}</strong>${c.issuer ? ' — '+c.issuer : ''}${c.date ? ' · '+c.date : ''}</div>`));
+    cert.forEach((c: any) => sections.push(`<div style="font-size:11px;margin:2px 0"><strong>${c.name || ''}</strong>${c.issuer || c.issuing_organization ? ' — '+(c.issuer||c.issuing_organization) : ''}${c.date || c.date_obtained ? ' · '+(c.date||c.date_obtained) : ''}</div>`));
+  }
+  const volunteer = raw.volunteer || [];
+  if (volunteer.length) {
+    sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Volunteer</h2>`);
+    volunteer.forEach((v: any) => sections.push(`<div style="margin:4px 0"><div style="font-weight:600;font-size:12px">${v.position || ''}${v.organization ? ' — '+v.organization : ''}</div><div style="color:#888;font-size:10px">${[v.start_date, v.end_date || 'Present'].filter(Boolean).join(' – ')}</div>${v.summary || v.description ? '<div style="font-size:11px;color:#444">'+(v.summary||v.description)+'</div>' : ''}</div>`));
+  }
+  const languages = raw.languages || (raw.additional_info?.languages) || [];
+  if (languages.length) {
+    sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Languages</h2><div style="font-size:11px;color:#444">${languages.map((l: any) => (l.language || l)+(l.fluency ? ' — '+l.fluency : '')).join(' · ')}</div>`);
+  }
+  const awards = raw.awards || [];
+  if (awards.length) {
+    sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Awards</h2>`);
+    awards.forEach((a: any) => sections.push(`<div style="margin:2px 0;font-size:11px"><strong>${a.title || ''}</strong>${a.awarder ? ' — '+a.awarder : ''}${a.date ? ' ('+a.date+')' : ''}${a.summary ? '<div style="color:#555">'+a.summary+'</div>' : ''}</div>`));
+  }
+  const publications = raw.publications || [];
+  if (publications.length) {
+    sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Publications</h2>`);
+    publications.forEach((p: any) => sections.push(`<div style="margin:2px 0;font-size:11px"><strong>${p.name || ''}</strong>${p.publisher ? ' — '+p.publisher : ''}${p.release_date ? ' ('+p.release_date+')' : ''}${p.summary ? '<div style="color:#555">'+p.summary+'</div>' : ''}</div>`));
+  }
+  const interests = raw.interests || [];
+  if (interests.length) {
+    sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">Interests</h2><div style="font-size:11px;color:#444">${interests.map((i: any) => i.name || i).join(', ')}</div>`);
+  }
+  const references = raw.references || [];
+  if (references.length) {
+    sections.push(`<h2 style="font-size:13px;font-weight:600;margin:10px 0 4px;color:#333;border-bottom:1px solid #ddd;padding-bottom:2px">References</h2>`);
+    references.forEach((r: any) => sections.push(`<div style="margin:2px 0;font-size:11px"><strong>${r.name || ''}</strong>${r.reference ? '<div style="color:#555">'+r.reference+'</div>' : ''}</div>`));
   }
   const innerHtml = sections.join('');
   return (
-    <div className="origin-top flex justify-center" style={{ width: "1000px", transform: `scale(${scale})`, flexShrink: 0, transformOrigin: 'top' }}>
-      <div style={{ fontFamily: 'Inter, sans-serif', width: '800px', padding: '24px 32px', color: '#222', lineHeight: '1.5', background: '#fff' }} dangerouslySetInnerHTML={{ __html: innerHtml }} />
+    <div className="origin-top flex justify-center" style={{ width: "794px", transform: `scale(${scale})`, flexShrink: 0, transformOrigin: 'top' }}>
+      <div style={{ fontFamily: 'Inter, sans-serif', width: '210mm', padding: '40px 48px', color: '#222', lineHeight: '1.5', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,.08)', margin: '0 auto', fontSize: '12px' }} dangerouslySetInnerHTML={{ __html: innerHtml }} />
     </div>
   );
 }
@@ -1653,12 +1742,17 @@ function CertificationsForm({ resumeData, setResumeData, onFocus, onBlur }: any)
 }
 
 function ResumePreview({ data }: { data: ResumeData }) {
-  const rawData = (() => {
+  const [rawData, setRawData] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
     try {
-      const raw = localStorage.getItem('rawResumeData_' + new URLSearchParams(window.location.search).get('upload_id'));
-      return raw ? JSON.parse(raw)?.data : null;
-    } catch { return null; }
-  })();
+      const id = new URLSearchParams(window.location.search).get('upload_id');
+      if (!id) return;
+      const raw = localStorage.getItem('rawResumeData_' + id);
+      if (raw) setRawData(JSON.parse(raw)?.data);
+    } catch { /* ignore */ }
+  }, []);
 
   const p = data.personalInfo;
   const designation = data.experience[0]?.title || rawData?.work_experience?.[0]?.job_title || '';

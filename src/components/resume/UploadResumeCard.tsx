@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { FiUpload, FiLoader, FiRefreshCw } from 'react-icons/fi';
 import { THEME } from '../../styles/theme';
 import Card from '../shared/Card';
-import { resumeApiClient } from '@/lib/api/resumeApi';
+import { resumeApiClient } from '@/services/resumeApi';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';

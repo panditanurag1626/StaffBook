@@ -94,9 +94,11 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
   const router = useRouter();
   const pathname = usePathname();
 
+  // Start with "versions" during SSR/initial render so server and client HTML
+  // match.  The URL-sync effect below corrects the tab after hydration.
   const [activeTab, setActiveTab] = useState<
     "versions" | "builder" | "analytics" | "templates" | "share" | "uploadBuilder"
-  >(searchParams.get(queryParam) as any || "versions");
+  >("versions");
   const [resumeRefreshKey, setResumeRefreshKey] = useState(0);
 
   const handleTabChange = (tab: string) => {
@@ -244,24 +246,42 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
       : (rawData.education || []).map((e: any) => ({ degree: e.degree || '', institution: e.institution || '', graduationDate: e.end_year || '', gpa: e.grade || '' }));
     const skillsRaw = isJsonResume ? (rawData.skills || []) : [...new Set([...(rawData.skills || []), ...(rawData.additional_info?.technical_skills || []), ...(rawData.additional_info?.soft_skills || [])])];
     const skills = skillsRaw.map((s: any) => (typeof s === 'string' ? s : s.name || s));
+    const projects = rawData.projects || [];
+    const certifications = isJsonResume ? (rawData.certificates || []) : (rawData.certifications || []);
+    const volunteer = rawData.volunteer || [];
+    const languages = rawData.languages || (rawData.additional_info?.languages) || [];
+    const awards = rawData.awards || [];
+    const publications = rawData.publications || [];
+    const interests = rawData.interests || [];
+    const references = rawData.references || [];
+    if (typeof window === 'undefined') return;
     const win = window.open('', '_blank');
     if (!win) { toast.error('Pop-up blocked'); return; }
     const sectionHtml = (label: string, content: string) => content ? `<div style="margin-bottom:14px"><h2 style="font-size:13px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #7c3aed;padding-bottom:4px;margin-bottom:6px">${label}</h2>${content}</div>` : '';
     const contactHtml = [email, phone, location].filter(Boolean).join(' &nbsp;|&nbsp; ');
+    const linkedinHtml = p.linkedin || p.linkedin_profile ? `<div>${escHtml(p.linkedin || p.linkedin_profile)}</div>` : '';
     const summaryHtml = summary ? `<p style="font-size:13px;color:#4b5563;line-height:1.6;margin:0">${escHtml(summary)}</p>` : '';
     const expHtml = (experience || []).map((e: any) => e?.title || e?.company ? `<div style="margin-bottom:8px"><div style="font-weight:600;font-size:13px;color:#111827">${escHtml(e.title || '')}</div><div style="color:#6b7280;font-size:12px">${[e.company, e.startDate ? `${e.startDate} – ${e.endDate || 'Present'}` : ''].filter(Boolean).join(' · ')}</div>${e.description ? `<div style="font-size:12px;color:#4b5563;margin-top:2px;line-height:1.5">${escHtml(e.description)}</div>` : ''}</div>` : '').filter(Boolean).join('');
     const eduHtml = (education || []).map((e: any) => e?.degree || e?.institution ? `<div style="margin-bottom:4px"><div style="font-weight:600;font-size:13px;color:#111827">${escHtml(e.degree || '')}</div><div style="color:#6b7280;font-size:12px">${[e.institution, e.graduationDate].filter(Boolean).join(' · ')}${e.gpa ? ` · <span style="font-weight:500">GPA: ${escHtml(e.gpa)}</span>` : ''}</div></div>` : '').filter(Boolean).join('');
     const skillsHtml = (skills || []).length ? skills.map(s => escHtml(s)).join(' &middot; ') : '';
-    const hasData = name || contactHtml || summaryHtml || expHtml || eduHtml || skillsHtml;
+    const projHtml = projects.map((pr: any) => pr.name || pr.title ? `<div style="margin-bottom:8px"><div style="font-weight:600;font-size:13px;color:#111827">${escHtml(pr.name || pr.title)}</div><div style="color:#6b7280;font-size:12px">${[pr.start_date, pr.end_date || 'Present'].filter(Boolean).join(' – ')}</div>${pr.description ? `<div style="font-size:12px;color:#4b5563;margin-top:2px;line-height:1.5">${escHtml(pr.description)}</div>` : ''}${(pr.highlights||[]).length ? pr.highlights.map((h: string) => `<div style="font-size:11px;color:#555;margin:1px 0 1px 16px">– ${escHtml(h)}</div>`).join('') : ''}</div>` : '').filter(Boolean).join('');
+    const certHtml = certifications.map((c: any) => c.name ? `<div style="margin-bottom:4px;font-size:12px"><strong>${escHtml(c.name)}</strong>${c.issuer || c.issuing_organization ? ' — '+escHtml(c.issuer||c.issuing_organization) : ''}${c.date || c.date_obtained ? ' · '+(c.date||c.date_obtained) : ''}</div>` : '').filter(Boolean).join('');
+    const volHtml = volunteer.map((v: any) => v.position ? `<div style="margin-bottom:8px"><div style="font-weight:600;font-size:13px;color:#111827">${escHtml(v.position)}${v.organization ? ' — '+escHtml(v.organization) : ''}</div><div style="color:#6b7280;font-size:12px">${[v.start_date, v.end_date || 'Present'].filter(Boolean).join(' – ')}</div>${v.summary || v.description ? `<div style="font-size:12px;color:#4b5563;margin-top:2px;line-height:1.5">${escHtml(v.summary||v.description)}</div>` : ''}</div>` : '').filter(Boolean).join('');
+    const langHtml = languages.length ? languages.map((l: any) => (l.language || l)+(l.fluency ? ' — '+l.fluency : '')).join(' &middot; ') : '';
+    const awardHtml = awards.map((a: any) => a.title ? `<div style="margin-bottom:4px;font-size:12px"><strong>${escHtml(a.title)}</strong>${a.awarder ? ' — '+escHtml(a.awarder) : ''}${a.date ? ' ('+a.date+')' : ''}${a.summary ? '<div style="color:#555;margin-top:2px">'+escHtml(a.summary)+'</div>' : ''}</div>` : '').filter(Boolean).join('');
+    const pubHtml = publications.map((p: any) => p.name ? `<div style="margin-bottom:4px;font-size:12px"><strong>${escHtml(p.name)}</strong>${p.publisher ? ' — '+escHtml(p.publisher) : ''}${p.release_date ? ' ('+p.release_date+')' : ''}${p.summary ? '<div style="color:#555;margin-top:2px">'+escHtml(p.summary)+'</div>' : ''}</div>` : '').filter(Boolean).join('');
+    const intHtml = interests.length ? interests.map((i: any) => i.name || i).join(', ') : '';
+    const refHtml = references.map((r: any) => r.name ? `<div style="margin-bottom:4px;font-size:12px"><strong>${escHtml(r.name)}</strong>${r.reference ? '<div style="color:#555">'+escHtml(r.reference)+'</div>' : ''}</div>` : '').filter(Boolean).join('');
+    const hasData = name || contactHtml || summaryHtml || expHtml || eduHtml || skillsHtml || projHtml || certHtml;
     const bodyContent = hasData
-      ? `<div class="page"><div class="header"><h1>${escHtml(name)}</h1>${contactHtml ? `<div class="contact">${contactHtml}</div>` : ''}</div>${sectionHtml('Professional Summary', summaryHtml)}${sectionHtml('Experience', expHtml)}${sectionHtml('Education', eduHtml)}${sectionHtml('Skills', skillsHtml)}</div>`
+      ? `<div class="page"><div class="header"><h1>${escHtml(name)}</h1>${contactHtml ? `<div class="contact">${contactHtml}</div>` : ''}${linkedinHtml ? `<div class="contact" style="margin-top:2px">${linkedinHtml}</div>` : ''}</div>${sectionHtml('Professional Summary', summaryHtml)}${sectionHtml('Experience', expHtml)}${sectionHtml('Education', eduHtml)}${sectionHtml('Skills', skillsHtml)}${sectionHtml('Projects', projHtml)}${sectionHtml('Certifications', certHtml)}${sectionHtml('Volunteer', volHtml)}${sectionHtml('Languages', langHtml)}${sectionHtml('Awards', awardHtml)}${sectionHtml('Publications', pubHtml)}${sectionHtml('Interests', intHtml)}${sectionHtml('References', refHtml)}</div>`
       : `<div class="page" style="text-align:center;padding:80px 48px"><div style="font-size:48px;margin-bottom:16px">📄</div><h2 style="color:#374151;margin-bottom:8px">No Resume Data</h2><p style="color:#6b7280;font-size:14px;line-height:1.6">This resume has no content yet. Edit it in the Resume Builder to add your details.</p></div>`;
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escHtml(name)} - Resume</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Segoe UI,sans-serif;background:#f3f4f6;display:flex;justify-content:center;padding:40px 16px}.page{max-width:800px;width:100%;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:40px 48px;border-radius:4px}.header{margin-bottom:20px}.header h1{font-size:26px;font-weight:700;color:#111827;margin:0;line-height:1.2}.header .contact{font-size:13px;color:#6b7280;margin-top:4px}</style></head><body>${bodyContent}</body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escHtml(name)} - Resume</title><style>@page{size:A4;margin:15mm}*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Segoe UI,sans-serif;background:#f3f4f6;display:flex;justify-content:center;padding:40px 16px}@media print{body{background:#fff;padding:0}}@media screen{.page{max-width:800px;width:100%;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:40px 48px;border-radius:4px}}.header{margin-bottom:20px}.header h1{font-size:26px;font-weight:700;color:#111827;margin:0;line-height:1.2}.header .title{font-size:14px;color:#6b7280;margin-top:2px}.header .contact{font-size:13px;color:#6b7280;margin-top:4px}</style></head><body>${bodyContent}</body></html>`;
     try { win.document.write(html); win.document.close(); } catch (e) { toast.error('Failed to open preview'); }
   };
 
   const handleDeleteResume = async (resumeId: string) => {
-    if (!window.confirm("Are you sure you want to delete this resume?")) return;
+    if (typeof window === 'undefined' || !window.confirm("Are you sure you want to delete this resume?")) return;
     try {
       const response = await apiClient.post("resume-builders/delete-resume-builder", { id: resumeId });
       if (response.status === 200) {
