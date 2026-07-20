@@ -91,7 +91,7 @@ interface ATSScore {
   };
 }
 
-export default function ATSResumeBuilder() {
+export default function ATSResumeBuilder({ uploadId: propUploadId }: { uploadId?: string | null }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -101,7 +101,10 @@ export default function ATSResumeBuilder() {
   // render produce identical HTML (prevents hydration mismatch).
   React.useEffect(() => { setMounted(true); }, []);
 
-  const uploadId = !mounted ? null : searchParams.get('upload_id');
+  // When a prop is provided (from ResumeContent after upload), prefer it over URL params.
+  // This avoids the Next.js bug where useSearchParams doesn't update after same-pathname navigation.
+  const urlUploadId = !mounted ? null : searchParams.get('upload_id');
+  const uploadId = propUploadId ?? urlUploadId;
   const resumeId = !mounted ? null : searchParams.get('resume_id');
   const templateId = !mounted ? null : searchParams.get('template_id');
   const { user } = useAuth();
