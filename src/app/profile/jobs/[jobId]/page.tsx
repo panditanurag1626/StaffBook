@@ -567,7 +567,7 @@ export default function JobDetailPage() {
                       isRevealed={showEmail}
                     />
                     {(() => {
-                      const jobIsApplied = !!(job.is_applied || job.isApplied);
+                      const jobIsApplied = !!job.is_applied;
                       return (
                         <>
                           <PlatformActionButton
