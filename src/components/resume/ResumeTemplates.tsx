@@ -418,7 +418,7 @@ const ResumeTemplates: React.FC = () => {
   );
 };
 
-function LazyIframe({ src, title, colorScheme, previewFailed: _pf }: { src: string; title: string; colorScheme?: { primary: string; secondary: string; accent: string; }; previewFailed?: boolean }) {
+function LazyIframe({ src, title, colorScheme, previewFailed: _pf }: { src: string; title: string; colorScheme?: { primary: string; secondary: string; accent: string; text: string; }; previewFailed?: boolean }) {
   const [loaded, setLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
