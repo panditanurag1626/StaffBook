@@ -214,6 +214,66 @@ export async function analyzeAts(
   return (data?.data as AtsScore) ?? null;
 }
 
+// ============================================================
+// New endpoints (schema, jd-match, ai-*)
+// ============================================================
+
+/** GET /api/schema — fetch JSON Resume schema + sample data */
+export async function fetchSchema(): Promise<Record<string, unknown>> {
+  const { data } = await resumeApiClient.get('/api/schema');
+  return data?.data ?? data;
+}
+
+/** POST /api/jd-match — match resume against a job description */
+export async function matchJobDescription(
+  body: { resume: Record<string, unknown>; job_description: string },
+): Promise<Record<string, unknown>> {
+  const { data } = await resumeApiClient.post('/api/jd-match', body);
+  return data?.data ?? data;
+}
+
+/** POST /api/ai-generate-text — AI-generate achievement bullets */
+export async function aiGenerateText(
+  body: { resume: Record<string, unknown>; attempt_number?: number },
+): Promise<Record<string, unknown>> {
+  const { data } = await resumeApiClient.post('/api/ai-generate-text', body);
+  return data?.data ?? data;
+}
+
+/** POST /api/ai-apply — apply all AI suggestions at once */
+export async function aiApplyAll(
+  body: { resume: Record<string, unknown>; ai_analysis: Record<string, unknown> },
+): Promise<Record<string, unknown>> {
+  const { data } = await resumeApiClient.post('/api/ai-apply', body);
+  return data?.data ?? data;
+}
+
+/** POST /api/ai-apply/summary — apply summary rewrite only */
+export async function aiApplySummary(
+  body: { resume: Record<string, unknown>; summary_rewrite: string },
+): Promise<Record<string, unknown>> {
+  const { data } = await resumeApiClient.post('/api/ai-apply/summary', body);
+  return data?.data ?? data;
+}
+
+/** POST /api/ai-apply/keywords — apply keyword suggestions only */
+export async function aiApplyKeywords(
+  body: { resume: Record<string, unknown>; keyword_suggestions: Array<Record<string, string>> },
+): Promise<Record<string, unknown>> {
+  const { data } = await resumeApiClient.post('/api/ai-apply/keywords', body);
+  return data?.data ?? data;
+}
+
+/** POST /api/ai-apply/verbs — apply action verb upgrades only */
+export async function aiApplyVerbs(
+  body: { resume: Record<string, unknown>; action_verb_upgrades: Array<{ from: string; to: string }> },
+): Promise<Record<string, unknown>> {
+  const { data } = await resumeApiClient.post('/api/ai-apply/verbs', body);
+  return data?.data ?? data;
+}
+
+// ============================================================
+
 /** Download a template via the preview endpoint (renders HTML, opens print dialog). */
 export async function downloadPdf(
   templateId: number | string,
@@ -239,6 +299,41 @@ export async function downloadPdf(
     }
     throw new Error('PDF generation failed');
   }
+}
+
+/** POST /api/templates/{id}/html — render template as raw HTML */
+export async function renderTemplateHtmlRaw(
+  templateId: number | string,
+  body: Record<string, unknown>,
+): Promise<string> {
+  const { data } = await resumeApiClient.post(
+    `/api/templates/${templateId}/html`,
+    body,
+    { responseType: 'text' },
+  );
+  return typeof data === 'string' ? data : String(data?.html ?? data ?? '');
+}
+
+/** POST /api/templates/{id}/pdf — generate PDF download */
+export async function generateTemplatePdf(
+  templateId: number | string,
+  body: Record<string, unknown>,
+  filename = 'Resume.pdf',
+): Promise<void> {
+  const blob = await (async () => {
+    const { data } = await resumeApiClient.post(
+      `/api/templates/${templateId}/pdf`,
+      body,
+      { responseType: 'blob' },
+    );
+    return data as Blob;
+  })();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ============================================================

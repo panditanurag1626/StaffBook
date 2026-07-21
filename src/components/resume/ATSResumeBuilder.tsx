@@ -35,6 +35,15 @@ import {
   openHtmlWindow,
   fetchAtsScore,
   AtsScore,
+  fetchSchema,
+  matchJobDescription,
+  aiGenerateText,
+  aiApplyAll,
+  aiApplySummary,
+  aiApplyKeywords,
+  aiApplyVerbs,
+  renderTemplateHtmlRaw,
+  generateTemplatePdf,
 } from "@/services/resumeApi";
 import toast from "react-hot-toast";
 import ResumeTemplates from "./ResumeTemplates";
@@ -140,6 +149,19 @@ export default function ATSResumeBuilder() {
     skills: [],
     certifications: [],
   });
+
+  // JD Match state
+  const [jdText, setJdText] = useState("");
+  const [jdMatchResult, setJdMatchResult] = useState<Record<string, any> | null>(null);
+  const [jdMatchLoading, setJdMatchLoading] = useState(false);
+
+  // AI Generate state
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiGeneratedText, setAiGeneratedText] = useState("");
+  const [aiSuggestions, setAiSuggestions] = useState<Record<string, any> | null>(null);
+
+  // Schema sample
+  const [schemaLoading, setSchemaLoading] = useState(false);
 
   const [atsScore, setAtsScore] = useState<ATSScore>({
     score: 0,
@@ -629,6 +651,8 @@ export default function ATSResumeBuilder() {
     { id: "education", label: "Education", icon: <FiBook size={18} /> },
     { id: "skills", label: "Skills", icon: <FiCode size={18} /> },
     { id: "certifications", label: "Certifications", icon: <FiAward size={18} /> },
+    { id: "ai-tools", label: "AI Tools", icon: <FiStar size={18} /> },
+    { id: "jd-match", label: "JD Match", icon: <FiCheckCircle size={18} /> },
   ];
 
   // Unified score view: prefer the real API analysis, fall back to the local
@@ -908,6 +932,304 @@ export default function ATSResumeBuilder() {
                   onFocus={() => setIsFormActive(true)}
                   onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
                 />
+              )}
+              {activeSection === "ai-tools" && (
+                <div className="space-y-6">
+                  <Card>
+                    <Card.Header>
+                      <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <FiStar className="text-purple-600" /> AI Tools
+                      </h3>
+                    </Card.Header>
+                    <Card.Body className="space-y-4">
+                      {/* Load Schema Sample */}
+                      <div>
+                        <button
+                          onClick={async () => {
+                            setSchemaLoading(true);
+                            try {
+                              const schema = await fetchSchema();
+                              const sample = schema?.sample_resume as Record<string, any> || {};
+                              if (sample.basics) {
+                                setResumeData(prev => ({
+                                  ...prev,
+                                  personalInfo: {
+                                    fullName: sample.basics.name || "",
+                                    email: sample.basics.email || "",
+                                    phone: sample.basics.phone || "",
+                                    location: sample.basics.location || "",
+                                    linkedin: sample.basics.profiles?.find((p: any) => p.network === "LinkedIn")?.url || "",
+                                    portfolio: sample.basics.url || "",
+                                  },
+                                  summary: sample.basics.summary || "",
+                                  experience: (sample.work || []).map((w: any, i: number) => ({
+                                    id: Date.now().toString() + i,
+                                    title: w.position || "",
+                                    company: w.name || "",
+                                    location: w.location || "",
+                                    startDate: w.startDate || "",
+                                    endDate: w.endDate || "",
+                                    current: !w.endDate,
+                                    description: (w.highlights || []).join("\n"),
+                                  })),
+                                  education: (sample.education || []).map((e: any, i: number) => ({
+                                    id: Date.now().toString() + i,
+                                    degree: e.studyType || "",
+                                    institution: e.institution || "",
+                                    location: e.location || "",
+                                    graduationDate: e.endDate || "",
+                                    gpa: e.score || "",
+                                  })),
+                                  skills: sample.skills?.flatMap?.((s: any) => s.keywords || [s.name]) || [],
+                                  certifications: (sample.certificates || []).map((c: any, i: number) => ({
+                                    id: Date.now().toString() + i,
+                                    name: c.name || "",
+                                    issuer: c.issuer || "",
+                                    date: c.date || "",
+                                  })),
+                                }));
+                                toast.success("Sample data loaded!");
+                              }
+                            } catch { toast.error("Failed to load schema"); }
+                            setSchemaLoading(false);
+                          }}
+                          disabled={schemaLoading}
+                          className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 disabled:opacity-50"
+                        >
+                          {schemaLoading ? "Loading..." : "Load Sample Data"}
+                        </button>
+                        <p className="text-xs text-gray-500 mt-1">Fill the builder with sample JSON Resume data</p>
+                      </div>
+
+                      {/* AI Generate Text */}
+                      <div className="border-t pt-4">
+                        <h4 className="font-semibold text-sm mb-2">AI Generate Achievement Bullets</h4>
+                        <button
+                          onClick={async () => {
+                            setAiGenerating(true);
+                            try {
+                              const parsed = generateParsedDataPayload().data;
+                              const result = await aiGenerateText({ resume: parsed });
+                              const text = (result?.generated_text || result?.text || "") as string;
+                              setAiGeneratedText(text);
+                              if (text) toast.success("AI text generated!");
+                              else toast.error("No text generated");
+                            } catch { toast.error("AI generation failed"); }
+                            setAiGenerating(false);
+                          }}
+                          disabled={aiGenerating}
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50"
+                        >
+                          {aiGenerating ? "Generating..." : "Generate with AI"}
+                        </button>
+                        {aiGeneratedText && (
+                          <div className="mt-3">
+                            <textarea
+                              className="w-full border rounded-lg p-3 text-sm"
+                              rows={4}
+                              value={aiGeneratedText}
+                              onChange={(e) => setAiGeneratedText(e.target.value)}
+                            />
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(aiGeneratedText);
+                                  toast.success("Copied!");
+                                }}
+                                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                              >
+                                Copy
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const exp = resumeData.experience;
+                                  if (exp.length > 0) {
+                                    const updated = [...exp];
+                                    updated[0] = { ...updated[0], description: updated[0].description
+                                      ? updated[0].description + "\n" + aiGeneratedText
+                                      : aiGeneratedText };
+                                    setResumeData(prev => ({ ...prev, experience: updated }));
+                                    toast.success("Added to first experience!");
+                                  }
+                                }}
+                                className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
+                              >
+                                Add to Experience
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {/* AI Apply Suggestions */}
+                      <div className="border-t pt-4 space-y-3">
+                        <h4 className="font-semibold text-sm">Apply AI Suggestions</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={async () => {
+                              try {
+                                const parsed = generateParsedDataPayload().data;
+                                const summary = resumeData.summary;
+                                if (!summary) { toast.error("No summary to rewrite"); return; }
+                                const result = await aiApplySummary({ resume: parsed, summary_rewrite: summary });
+                                if (result?.resume) toast.success("Summary applied!");
+                                else toast.error("No response");
+                              } catch { toast.error("Apply failed"); }
+                            }}
+                            className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
+                          >
+                            Apply Summary
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const parsed = generateParsedDataPayload().data;
+                                const kws = resumeData.skills.map((s: string) => ({ keyword: s, section: "skills" }));
+                                if (!kws.length) { toast.error("No skills to suggest"); return; }
+                                const result = await aiApplyKeywords({ resume: parsed, keyword_suggestions: kws });
+                                if (result?.resume) toast.success("Keywords applied!");
+                                else toast.error("No response");
+                              } catch { toast.error("Apply failed"); }
+                            }}
+                            className="px-3 py-2 bg-teal-600 text-white rounded-lg text-xs font-semibold hover:bg-teal-700"
+                          >
+                            Apply Keywords
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const parsed = generateParsedDataPayload().data;
+                                const upgrades = resumeData.experience
+                                  .filter((e: any) => e.description)
+                                  .map((e: any) => ({ from: "", to: e.title || "" }));
+                                if (!upgrades.length) { toast.error("No experience to upgrade"); return; }
+                                const result = await aiApplyVerbs({ resume: parsed, action_verb_upgrades: upgrades });
+                                if (result?.resume) toast.success("Verbs applied!");
+                                else toast.error("No response");
+                              } catch { toast.error("Apply failed"); }
+                            }}
+                            className="px-3 py-2 bg-orange-600 text-white rounded-lg text-xs font-semibold hover:bg-orange-700"
+                          >
+                            Apply Verbs
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const parsed = generateParsedDataPayload().data;
+                                const result = await aiApplyAll({
+                                  resume: parsed,
+                                  ai_analysis: {
+                                    summary_rewrite: resumeData.summary,
+                                    keyword_suggestions: resumeData.skills.map((s: string) => ({ keyword: s, section: "skills" })),
+                                    action_verb_upgrades: resumeData.experience
+                                      .filter((e: any) => e.description)
+                                      .map((e: any) => ({ from: "", to: e.title || "" })),
+                                  },
+                                });
+                                if (result?.resume) toast.success("All suggestions applied!");
+                                else toast.error("No response");
+                              } catch { toast.error("Apply all failed"); }
+                            }}
+                            className="px-3 py-2 bg-purple-700 text-white rounded-lg text-xs font-semibold hover:bg-purple-800 col-span-2"
+                          >
+                            Apply All Suggestions
+                          </button>
+                        </div>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </div>
+              )}
+              {activeSection === "jd-match" && (
+                <div className="space-y-6">
+                  <Card>
+                    <Card.Header>
+                      <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <FiCheckCircle className="text-purple-600" /> Job Description Match
+                      </h3>
+                    </Card.Header>
+                    <Card.Body className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">Paste Job Description</label>
+                        <textarea
+                          className="w-full border rounded-lg p-3 text-sm"
+                          rows={6}
+                          placeholder="Paste the job description here..."
+                          value={jdText}
+                          onChange={(e) => setJdText(e.target.value)}
+                        />
+                      </div>
+                      <button
+                        onClick={async () => {
+                          if (!jdText.trim()) { toast.error("Paste a job description first"); return; }
+                          setJdMatchLoading(true);
+                          setJdMatchResult(null);
+                          try {
+                            const parsed = generateParsedDataPayload().data;
+                            const result = await matchJobDescription({
+                              resume: parsed,
+                              job_description: jdText,
+                            });
+                            setJdMatchResult(result);
+                            toast.success("Match analysis complete!");
+                          } catch { toast.error("JD match failed"); }
+                          setJdMatchLoading(false);
+                        }}
+                        disabled={jdMatchLoading}
+                        className="px-6 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-700 disabled:opacity-50"
+                      >
+                        {jdMatchLoading ? "Analyzing..." : "Analyze Match"}
+                      </button>
+
+                      {jdMatchResult && (
+                        <div className="border rounded-xl p-4 space-y-3 bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-sm">Match Score</span>
+                            <span className={`text-2xl font-bold ${
+                              (jdMatchResult.match_score as number || 0) >= 70
+                                ? "text-green-600" : (jdMatchResult.match_score as number || 0) >= 40
+                                ? "text-yellow-600" : "text-red-600"
+                            }`}>
+                              {jdMatchResult.match_score ?? jdMatchResult.score ?? "N/A"}%
+                            </span>
+                          </div>
+                          {Array.isArray(jdMatchResult.matched_keywords) && (
+                            <div>
+                              <span className="text-xs font-semibold text-gray-500">Matched Keywords</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {jdMatchResult.matched_keywords.map((kw: string, i: number) => (
+                                  <span key={i} className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">{kw}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {Array.isArray(jdMatchResult.missing_keywords) && (
+                            <div>
+                              <span className="text-xs font-semibold text-gray-500">Missing Keywords</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {jdMatchResult.missing_keywords.map((kw: string, i: number) => (
+                                  <span key={i} className="px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-xs">{kw}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {jdMatchResult.suggestions && (
+                            <div>
+                              <span className="text-xs font-semibold text-gray-500">Suggestions</span>
+                              <ul className="list-disc list-inside text-sm text-gray-700 mt-1">
+                                {(Array.isArray(jdMatchResult.suggestions)
+                                  ? jdMatchResult.suggestions
+                                  : [jdMatchResult.suggestions]
+                                ).map((s: string, i: number) => (
+                                  <li key={i}>{s}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </Card.Body>
+                  </Card>
+                </div>
               )}
               {activeSection === "templates" && (
                 <div className="pt-2">
