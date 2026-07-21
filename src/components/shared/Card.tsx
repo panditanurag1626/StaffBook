@@ -11,6 +11,7 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 const Card: React.FC<CardProps> & {
   Header: React.FC<React.HTMLAttributes<HTMLDivElement>>;
   Content: React.FC<React.HTMLAttributes<HTMLDivElement>>;
+  Body: React.FC<React.HTMLAttributes<HTMLDivElement>>;
   Footer: React.FC<React.HTMLAttributes<HTMLDivElement>>;
   ImageContainer: React.FC<React.HTMLAttributes<HTMLDivElement>>;
 } = ({ children, className = '', hoverEffect = false, noPadding = false, ...props }) => {
@@ -55,6 +56,7 @@ const CardImageContainer: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ ch
 
 Card.Header = CardHeader;
 Card.Content = CardContent;
+Card.Body = CardContent;
 Card.Footer = CardFooter;
 Card.ImageContainer = CardImageContainer;
 
