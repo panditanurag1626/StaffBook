@@ -112,6 +112,21 @@ export const resumeApiClient: AxiosInstance = axios.create({
   withCredentials: false,
 });
 
+// Interceptor: handle non-JSON error responses gracefully
+resumeApiClient.interceptors.response.use(
+  (r) => r,
+  (error) => {
+    if (error.response && typeof error.response.data === 'string') {
+      try {
+        error.response.data = JSON.parse(error.response.data);
+      } catch {
+        // keep raw string — at least it's visible in console.error
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
 // ============================================================
 // API methods
 // ============================================================
@@ -212,6 +227,113 @@ export async function analyzeAts(
 ): Promise<AtsScore | null> {
   const { data } = await resumeApiClient.post('/api/ats-analyze', body);
   return (data?.data as AtsScore) ?? null;
+}
+
+/**
+ * Convert custom resume format (personal_information, work_experience, etc.)
+ * to a robust JSON Resume format (basics, work, education, etc.) as expected
+ * by all AI/JD endpoints.
+ *
+ * Handles null/undefined/missing fields safely — never throws.
+ */
+export function toJsonResumeFormat(custom: Record<string, any>): Record<string, any> {
+  const info = custom?.personal_information ?? {};
+  const addInfo = custom?.additional_info ?? {};
+
+  // --- basics.location must be an object, never a string ---
+  const locStr = info.location || "";
+  const locParts = locStr.split(",").map((s: string) => s.trim());
+  const location: Record<string, string> = { city: locParts[0] || "", region: locParts[1] || "", countryCode: locParts[2] || "", address: "", postalCode: "" };
+
+  // --- profiles ---
+  const profiles: Array<Record<string, string>> = [];
+  if (info.linkedin_profile) profiles.push({ network: "LinkedIn", url: info.linkedin_profile, username: "" });
+  if (info.github_url) profiles.push({ network: "GitHub", url: info.github_url, username: "" });
+
+  // --- work ---
+  const work = (Array.isArray(custom?.work_experience) ? custom.work_experience : []).map((exp: any) => ({
+    name: exp.company || "",
+    position: exp.job_title || "",
+    location: exp.location || "Remote",
+    startDate: exp.start_date || "",
+    endDate: exp.end_date || "",
+    summary: "",
+    url: "",
+    highlights: Array.isArray(exp.responsibilities) ? exp.responsibilities : [],
+  }));
+
+  // --- education ---
+  const education = (Array.isArray(custom?.education) ? custom.education : []).map((edu: any) => ({
+    institution: edu.institution || "",
+    studyType: edu.degree || "",
+    area: edu.major || "",
+    startDate: "",
+    endDate: edu.end_year || "",
+    score: edu.grade || "",
+    url: "",
+    courses: [],
+  }));
+
+  // --- skills (JSON Resume expects array of { name, level, keywords }) ---
+  const skills = [
+    {
+      name: "Skills",
+      level: addInfo.inferred_job_title || "",
+      keywords: Array.isArray(custom?.skills) ? custom.skills : [],
+    },
+  ];
+
+  // --- certificates ---
+  const certificates = (Array.isArray(custom?.certifications) ? custom.certifications : []).map((cert: any) => ({
+    name: cert.name || "",
+    issuer: cert.issuing_organization || "",
+    date: cert.date_obtained || "",
+    url: "",
+  }));
+
+  // --- projects ---
+  const projects = Array.isArray(custom?.projects) ? custom.projects : [];
+
+  // --- languages ---
+  const languages = Array.isArray(addInfo.languages)
+    ? addInfo.languages.map((l: any) => (typeof l === "string" ? { language: l } : l))
+    : [];
+
+  // --- interests ---
+  const interests = Array.isArray(custom?.hobbies)
+    ? custom.hobbies.map((h: any) => (typeof h === "string" ? { name: h } : h))
+    : [];
+
+  // --- awards, publications, references, volunteer (from raw data if present) ---
+  const awards = Array.isArray(custom?.awards) ? custom.awards : [];
+  const publications = Array.isArray(custom?.publications) ? custom.publications : [];
+  const references = Array.isArray(custom?.references) ? custom.references : [];
+  const volunteer = Array.isArray(custom?.volunteer) ? custom.volunteer : [];
+
+  return {
+    basics: {
+      name: info.full_name || "",
+      label: addInfo.inferred_job_title || "",
+      image: "",
+      email: info.email || "",
+      phone: info.phone || "",
+      url: info.portfolio_website || "",
+      summary: custom?.professional_summary || "",
+      location,
+      profiles,
+    },
+    work,
+    education,
+    skills,
+    certificates,
+    projects,
+    languages,
+    interests,
+    awards,
+    publications,
+    references,
+    volunteer,
+  };
 }
 
 // ============================================================

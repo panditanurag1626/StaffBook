@@ -42,6 +42,7 @@ import {
   aiApplySummary,
   aiApplyKeywords,
   aiApplyVerbs,
+  toJsonResumeFormat,
   renderTemplateHtmlRaw,
   generateTemplatePdf,
 } from "@/services/resumeApi";
@@ -158,6 +159,7 @@ export default function ATSResumeBuilder() {
   // AI Generate state
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiGeneratedText, setAiGeneratedText] = useState("");
+  const [aiGenKey, setAiGenKey] = useState(0);
   const [aiSuggestions, setAiSuggestions] = useState<Record<string, any> | null>(null);
 
   // Schema sample
@@ -193,41 +195,43 @@ export default function ATSResumeBuilder() {
       }
     }
 
+    const safeArray = (arr: any[] | undefined | null): any[] => Array.isArray(arr) ? arr : [];
+
     const mapStateToData = () => ({
       personal_information: {
-        full_name: dataToUse.personalInfo.fullName,
-        email: dataToUse.personalInfo.email,
-        phone: dataToUse.personalInfo.phone,
-        location: dataToUse.personalInfo.location,
-        linkedin_profile: dataToUse.personalInfo.linkedin || null,
-        portfolio_website: dataToUse.personalInfo.portfolio || null
+        full_name: dataToUse.personalInfo?.fullName ?? "",
+        email: dataToUse.personalInfo?.email ?? "",
+        phone: dataToUse.personalInfo?.phone ?? "",
+        location: dataToUse.personalInfo?.location ?? "",
+        linkedin_profile: dataToUse.personalInfo?.linkedin || null,
+        portfolio_website: dataToUse.personalInfo?.portfolio || null
       },
-      professional_summary: dataToUse.summary,
-      work_experience: dataToUse.experience.map((exp: any) => ({
-        job_title: exp.title,
-        company: exp.company,
+      professional_summary: dataToUse.summary ?? "",
+      work_experience: safeArray(dataToUse.experience).map((exp: any) => ({
+        job_title: exp.title ?? "",
+        company: exp.company ?? "",
         location: exp.location || "Remote",
-        duration: `${exp.startDate} - ${exp.current ? 'Present' : exp.endDate}`,
-        start_date: exp.startDate,
-        end_date: exp.current ? 'Present' : exp.endDate,
+        duration: `${exp.startDate ?? ""} - ${exp.current ? 'Present' : (exp.endDate ?? "")}`,
+        start_date: exp.startDate ?? "",
+        end_date: exp.current ? 'Present' : (exp.endDate ?? ""),
         responsibilities: exp.description ? exp.description.split('\n').filter(Boolean) : []
       })),
-      education: dataToUse.education.map((edu: any) => ({
-        degree: edu.degree,
+      education: safeArray(dataToUse.education).map((edu: any) => ({
+        degree: edu.degree ?? "",
         major: null,
-        institution: edu.institution,
+        institution: edu.institution ?? "",
         location: edu.location || "",
         start_year: null,
-        end_year: edu.graduationDate,
+        end_year: edu.graduationDate ?? "",
         grade: edu.gpa || null
       })),
       projects: baseRawData?.data?.projects || [],
       hobbies: baseRawData?.data?.hobbies || [],
-      skills: dataToUse.skills,
-      certifications: dataToUse.certifications.map((cert: any) => ({
-        name: cert.name,
-        issuing_organization: cert.issuer,
-        date_obtained: cert.date
+      skills: safeArray(dataToUse.skills),
+      certifications: safeArray(dataToUse.certifications).map((cert: any) => ({
+        name: cert.name ?? "",
+        issuing_organization: cert.issuer ?? "",
+        date_obtained: cert.date ?? ""
       })),
       additional_info: baseRawData?.data?.additional_info || {
         technical_skills: [],
@@ -237,7 +241,7 @@ export default function ATSResumeBuilder() {
         awards: [],
         github_url: null,
         years_of_experience: 0,
-        inferred_job_title: dataToUse.experience[0]?.title || ""
+        inferred_job_title: safeArray(dataToUse.experience)[0]?.title || ""
       },
       parsing_info: baseRawData?.data?.parsing_info || {
         accuracy: 100,
@@ -1008,13 +1012,19 @@ export default function ATSResumeBuilder() {
                           onClick={async () => {
                             setAiGenerating(true);
                             try {
-                              const parsed = generateParsedDataPayload().data;
+                              const payload = generateParsedDataPayload();
+                              const parsed = toJsonResumeFormat(payload?.data ?? payload);
                               const result = await aiGenerateText({ resume: parsed });
                               const text = (result?.generated_text || result?.text || "") as string;
+                              setAiGenKey(k => k + 1);
                               setAiGeneratedText(text);
                               if (text) toast.success("AI text generated!");
                               else toast.error("No text generated");
-                            } catch { toast.error("AI generation failed"); }
+                            } catch (e: any) {
+                              const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "AI generation failed";
+                              console.error("Generate AI error:", { status: e?.response?.status, data: e?.response?.data, msg });
+                              toast.error(msg);
+                            }
                             setAiGenerating(false);
                           }}
                           disabled={aiGenerating}
@@ -1022,13 +1032,15 @@ export default function ATSResumeBuilder() {
                         >
                           {aiGenerating ? "Generating..." : "Generate with AI"}
                         </button>
-                        {aiGeneratedText && (
+                        {typeof aiGeneratedText === 'string' && aiGeneratedText.length > 0 && (
                           <div className="mt-3">
                             <textarea
                               className="w-full border rounded-lg p-3 text-sm"
-                              rows={4}
-                              value={aiGeneratedText}
+                              rows={10}
+                              key={aiGenKey}
+                              defaultValue={aiGeneratedText}
                               onChange={(e) => setAiGeneratedText(e.target.value)}
+                              ref={(el) => { if (el) { el.focus(); el.scrollIntoView({ block: 'nearest' }); } }}
                             />
                             <div className="flex gap-2 mt-2">
                               <button
@@ -1067,13 +1079,18 @@ export default function ATSResumeBuilder() {
                           <button
                             onClick={async () => {
                               try {
-                                const parsed = generateParsedDataPayload().data;
+                                const payload = generateParsedDataPayload();
+                                const parsed = toJsonResumeFormat(payload?.data ?? payload);
                                 const summary = resumeData.summary;
                                 if (!summary) { toast.error("No summary to rewrite"); return; }
                                 const result = await aiApplySummary({ resume: parsed, summary_rewrite: summary });
                                 if (result?.resume) toast.success("Summary applied!");
                                 else toast.error("No response");
-                              } catch { toast.error("Apply failed"); }
+                              } catch (e: any) {
+                                const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply failed";
+                                console.error("Apply Summary error:", { status: e?.response?.status, data: e?.response?.data, msg });
+                                toast.error(msg);
+                              }
                             }}
                             className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
                           >
@@ -1082,13 +1099,19 @@ export default function ATSResumeBuilder() {
                           <button
                             onClick={async () => {
                               try {
-                                const parsed = generateParsedDataPayload().data;
-                                const kws = resumeData.skills.map((s: string) => ({ keyword: s, section: "skills" }));
+                                const payload = generateParsedDataPayload();
+                                const parsed = toJsonResumeFormat(payload?.data ?? payload);
+                                const skillsArr = Array.isArray(resumeData.skills) ? resumeData.skills : [];
+                                const kws = skillsArr.map((s: string) => ({ keyword: s, section: "skills" }));
                                 if (!kws.length) { toast.error("No skills to suggest"); return; }
                                 const result = await aiApplyKeywords({ resume: parsed, keyword_suggestions: kws });
                                 if (result?.resume) toast.success("Keywords applied!");
                                 else toast.error("No response");
-                              } catch { toast.error("Apply failed"); }
+                              } catch (e: any) {
+                                const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply failed";
+                                console.error("Apply Keywords error:", { status: e?.response?.status, data: e?.response?.data, msg });
+                                toast.error(msg);
+                              }
                             }}
                             className="px-3 py-2 bg-teal-600 text-white rounded-lg text-xs font-semibold hover:bg-teal-700"
                           >
@@ -1097,15 +1120,21 @@ export default function ATSResumeBuilder() {
                           <button
                             onClick={async () => {
                               try {
-                                const parsed = generateParsedDataPayload().data;
-                                const upgrades = resumeData.experience
+                                const payload = generateParsedDataPayload();
+                                const parsed = toJsonResumeFormat(payload?.data ?? payload);
+                                const expArr = Array.isArray(resumeData.experience) ? resumeData.experience : [];
+                                const upgrades = expArr
                                   .filter((e: any) => e.description)
                                   .map((e: any) => ({ from: "", to: e.title || "" }));
                                 if (!upgrades.length) { toast.error("No experience to upgrade"); return; }
                                 const result = await aiApplyVerbs({ resume: parsed, action_verb_upgrades: upgrades });
                                 if (result?.resume) toast.success("Verbs applied!");
                                 else toast.error("No response");
-                              } catch { toast.error("Apply failed"); }
+                              } catch (e: any) {
+                                const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply failed";
+                                console.error("Apply Verbs error:", { status: e?.response?.status, data: e?.response?.data, msg });
+                                toast.error(msg);
+                              }
                             }}
                             className="px-3 py-2 bg-orange-600 text-white rounded-lg text-xs font-semibold hover:bg-orange-700"
                           >
@@ -1114,20 +1143,34 @@ export default function ATSResumeBuilder() {
                           <button
                             onClick={async () => {
                               try {
-                                const parsed = generateParsedDataPayload().data;
+                                const payload = generateParsedDataPayload();
+                                const parsed = toJsonResumeFormat(payload?.data ?? payload);
+                                const skillsArr = Array.isArray(resumeData.skills) ? resumeData.skills : [];
+                                const expArr = Array.isArray(resumeData.experience) ? resumeData.experience : [];
+                                const summary = resumeData.summary ?? "";
+                                const kws = skillsArr.map((s: string) => ({ keyword: s, section: "skills" }));
+                                const upgrades = expArr
+                                  .filter((e: any) => e.description)
+                                  .map((e: any) => ({ from: "", to: e.title || "" }));
+                                if (!summary && !kws.length && !upgrades.length) {
+                                  toast.error("No data to apply — fill summary, skills, or experience first");
+                                  return;
+                                }
                                 const result = await aiApplyAll({
                                   resume: parsed,
                                   ai_analysis: {
-                                    summary_rewrite: resumeData.summary,
-                                    keyword_suggestions: resumeData.skills.map((s: string) => ({ keyword: s, section: "skills" })),
-                                    action_verb_upgrades: resumeData.experience
-                                      .filter((e: any) => e.description)
-                                      .map((e: any) => ({ from: "", to: e.title || "" })),
+                                    summary_rewrite: summary || "",
+                                    keyword_suggestions: kws,
+                                    action_verb_upgrades: upgrades,
                                   },
                                 });
                                 if (result?.resume) toast.success("All suggestions applied!");
                                 else toast.error("No response");
-                              } catch { toast.error("Apply all failed"); }
+                              } catch (e: any) {
+                                const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply all failed";
+                                console.error("Apply All error:", { status: e?.response?.status, data: e?.response?.data, msg });
+                                toast.error(msg);
+                              }
                             }}
                             className="px-3 py-2 bg-purple-700 text-white rounded-lg text-xs font-semibold hover:bg-purple-800 col-span-2"
                           >
@@ -1164,14 +1207,18 @@ export default function ATSResumeBuilder() {
                           setJdMatchLoading(true);
                           setJdMatchResult(null);
                           try {
-                            const parsed = generateParsedDataPayload().data;
+                            const parsed = toJsonResumeFormat(generateParsedDataPayload().data);
                             const result = await matchJobDescription({
                               resume: parsed,
                               job_description: jdText,
                             });
                             setJdMatchResult(result);
                             toast.success("Match analysis complete!");
-                          } catch { toast.error("JD match failed"); }
+                          } catch (e: any) {
+                            const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "JD match failed";
+                            console.error("JD Match error:", { status: e?.response?.status, data: e?.response?.data, msg });
+                            toast.error(msg);
+                          }
                           setJdMatchLoading(false);
                         }}
                         disabled={jdMatchLoading}
