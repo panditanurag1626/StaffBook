@@ -220,16 +220,25 @@ export async function downloadPdf(
   body: Record<string, unknown>,
   _filename = 'Resume.pdf',
 ): Promise<void> {
-  const uploadId = body?.upload_id;
-  if (uploadId) {
-    const url = templatePreviewUrl(templateId, String(uploadId));
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Preview failed: ${res.status}`);
-    const html = await res.text();
+  // Try POST /render first — it accepts both { data: ... } and { upload_id: ... }.
+  try {
+    const html = await renderTemplateHtml(templateId, body);
     openHtmlPrintWindow(html);
     return;
+  } catch {
+    // Fallback: GET /preview with upload_id (legacy).
+    const uploadId = body?.upload_id;
+    if (uploadId) {
+      const url = templatePreviewUrl(templateId, String(uploadId));
+      const res = await fetch(url);
+      if (res.ok) {
+        const html = await res.text();
+        openHtmlPrintWindow(html);
+        return;
+      }
+    }
+    throw new Error('PDF generation failed');
   }
-  throw new Error('PDF generation requires upload_id');
 }
 
 // ============================================================
