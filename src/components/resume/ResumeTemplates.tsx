@@ -71,7 +71,10 @@ const ResumeTemplates: React.FC = () => {
       return;
     }
     if (!uploadId) {
-      router.push(`/profile/jobs?tab=resume&resumeTab=builder&template_id=${template.id}`);
+      setSelectedTemplate(template);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('template_id', template.id.toString());
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
     } else {
       setSelectedTemplate(template);
       const params = new URLSearchParams(searchParams.toString());
