@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { resumeApiClient, templatePreviewUrl, printTemplate, downloadTemplatePdf } from '@/services/resumeApi';
+import { resumeApiClient, templatePreviewUrl, printTemplate, downloadTemplatePdf, renderTemplateHtml, openHtmlWindow } from '@/services/resumeApi';
 import { FALLBACK_TEMPLATES } from '@/lib/api/templates-fallback';
 import { THEME } from '../../styles/theme';
 import Card from '../shared/Card';
@@ -83,23 +83,107 @@ const ResumeTemplates: React.FC = () => {
     }
   };
 
-  const handlePreview = () => {
-    if (selectedTemplate && uploadId) {
-      window.open(templatePreviewUrl(selectedTemplate.id, uploadId), "_blank");
+  const buildGroupedDataFromStorage = (id: string) => {
+    try {
+      const raw = localStorage.getItem('rawResumeData_' + id);
+      if (!raw) return null;
+      const response = JSON.parse(raw);
+      const d = response?.data;
+      if (!d) return null;
+
+      const basics = d.basics || {};
+      const workExp = (d.work || []).map((w: any) => ({
+        job_title: w.position || '',
+        company: w.name || '',
+        location: w.location || 'Remote',
+        duration: `${w.startDate || ''} - ${w.endDate || 'Present'}`,
+        start_date: w.startDate || '',
+        end_date: w.endDate || 'Present',
+        responsibilities: w.highlights || (w.summary ? [w.summary] : [])
+      }));
+      const edu = (d.education || []).map((e: any) => ({
+        degree: e.studyType || e.degree || '',
+        major: e.area || null,
+        institution: e.institution || '',
+        location: e.location || '',
+        start_year: e.startDate || null,
+        end_year: e.endDate || null,
+        grade: e.score || null
+      }));
+      const skills = d.skills?.flatMap?.((s: any) => s.keywords || [s.name]) || [];
+      const certs = (d.certificates || []).map((c: any) => ({
+        name: c.name || '',
+        issuing_organization: c.issuer || '',
+        date_obtained: c.date || ''
+      }));
+      const projects = (d.projects || []).map((p: any) => ({
+        name: p.name || '',
+        description: p.description || '',
+        url: p.url || '',
+        startDate: p.startDate || '',
+        endDate: p.endDate || '',
+        highlights: p.highlights || []
+      }));
+      const profiles = basics.profiles || [];
+      const findProfile = (name: string) => profiles.find((p: any) => p.network?.toLowerCase() === name);
+
+      return {
+        personal_information: {
+          full_name: basics.name || '',
+          email: basics.email || '',
+          phone: basics.phone || '',
+          location: basics.location || '',
+          linkedin_profile: findProfile('linkedin')?.url || null,
+          portfolio_website: basics.url || null
+        },
+        professional_summary: basics.summary || '',
+        work_experience: workExp,
+        education: edu,
+        projects,
+        hobbies: Array.isArray(d.interests) ? d.interests.map((i: any) => i.name || '') : [],
+        skills,
+        certifications: certs,
+        additional_info: {
+          technical_skills: skills,
+          soft_skills: [],
+          languages: Array.isArray(d.languages) ? d.languages.map((l: any) => l.language || l.name || '') : [],
+          achievements: (d.awards || []).map((a: any) => a.title || ''),
+          awards: (d.awards || []).map((a: any) => a.title || ''),
+          github_url: findProfile('github')?.url || '',
+          years_of_experience: 0,
+          inferred_job_title: workExp[0]?.job_title || ''
+        },
+        parsing_info: { accuracy: 100, label: 'high' }
+      };
+    } catch {
+      return null;
     }
+  };
+
+  const handlePreview = async () => {
+    if (!selectedTemplate || !uploadId) return;
+    try {
+      const groupedData = buildGroupedDataFromStorage(uploadId);
+      if (groupedData) {
+        const html = await renderTemplateHtml(selectedTemplate.id, { data: groupedData });
+        openHtmlWindow(html);
+        return;
+      }
+    } catch {}
+    window.open(templatePreviewUrl(selectedTemplate.id, uploadId), '_blank');
   };
 
   const handleDownload = async () => {
     if (!selectedTemplate || !uploadId) return;
     const filename = `${selectedTemplate.name.replace(/\s+/g, '_')}_Resume.pdf`;
+    const groupedData = buildGroupedDataFromStorage(uploadId);
+    const body = groupedData ? { data: groupedData } : { upload_id: uploadId };
     try {
-      // Real PDF from the server.
-      await downloadTemplatePdf(selectedTemplate.id, { upload_id: uploadId }, filename);
+      await downloadTemplatePdf(selectedTemplate.id, body, filename);
     } catch (err) {
-      // No server PDF engine (501) or error — fall back to browser print-to-PDF.
       console.error('Download error:', err);
       try {
-        await printTemplate(selectedTemplate.id, { upload_id: uploadId });
+        await printTemplate(selectedTemplate.id, body);
       } catch {
         window.open(templatePreviewUrl(selectedTemplate.id, uploadId), '_blank');
       }
