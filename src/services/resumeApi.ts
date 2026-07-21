@@ -240,12 +240,16 @@ export async function downloadPdf(
 export async function fetchAtsScore(
   body: Record<string, unknown>,
 ): Promise<AtsScore | null> {
-  try {
-    const { data } = await resumeApiClient.post('/api/ats-analyze', body);
-    return (data?.data as AtsScore) ?? null;
-  } catch {
-    return null;
+  for (const endpoint of ['/api/ats-analyze', '/api/ats-score']) {
+    try {
+      const { data } = await resumeApiClient.post(endpoint, body);
+      const score = (data?.data as AtsScore) ?? null;
+      if (score && score.overall_score > 0) return score;
+    } catch {
+      // try next endpoint
+    }
   }
+  return null;
 }
 
 /** Render template with `{ data: groupedData }` payload */
