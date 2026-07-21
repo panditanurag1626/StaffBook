@@ -515,7 +515,7 @@ export default function ATSResumeBuilder() {
     let cancelled = false;
     const handle = setTimeout(async () => {
       try {
-        const score = await fetchAtsScore({ data: generateParsedDataPayload().data });
+        const score = await fetchAtsScore(generateParsedDataPayload().data);
         if (!cancelled && score) setApiAtsScore(score);
       } catch {
         /* keep last known score; local heuristic remains as fallback */

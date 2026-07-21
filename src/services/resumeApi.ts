@@ -240,16 +240,42 @@ export async function downloadPdf(
 export async function fetchAtsScore(
   body: Record<string, unknown>,
 ): Promise<AtsScore | null> {
-  for (const endpoint of ['/api/ats-analyze', '/api/ats-score']) {
-    try {
-      const { data } = await resumeApiClient.post(endpoint, body);
-      const score = (data?.data as AtsScore) ?? null;
-      if (score && score.overall_score > 0) return score;
-    } catch {
-      // try next endpoint
-    }
+  try {
+    const { data } = await resumeApiClient.post('/api/ats-analyze', body);
+    const ruleBased = data?.data?.rule_based;
+    if (!ruleBased || typeof ruleBased.overall_score !== 'number') return null;
+
+    const extractValue = (v: unknown): number => {
+      if (typeof v === 'number') return v;
+      if (v && typeof v === 'object') {
+        const o = v as Record<string, unknown>;
+        return (o.percentage as number) ?? (o.score as number) ?? 0;
+      }
+      return 0;
+    };
+
+    const bd = ruleBased.breakdown as Record<string, unknown> | undefined;
+
+    return {
+      overall_score: ruleBased.overall_score,
+      breakdown: {
+        contact_info: extractValue(bd?.contact_info),
+        summary: extractValue(bd?.summary),
+        work_experience: extractValue(bd?.work_experience),
+        quantification: extractValue(bd?.quantification),
+        skills: extractValue(bd?.skills),
+        education: extractValue(bd?.education),
+        projects: extractValue(bd?.projects),
+        certifications: extractValue(bd?.certifications),
+      },
+      feedback: ruleBased.feedback
+        ? Object.values(ruleBased.feedback as Record<string, string[]>).flat()
+        : [],
+      stats: {},
+    };
+  } catch {
+    return null;
   }
-  return null;
 }
 
 /** Render template with `{ data: groupedData }` payload */
