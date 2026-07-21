@@ -484,9 +484,9 @@ export default function NearbyJobsMapPage() {
                           icon={FiSend}
                           label="Apply"
                           showLabelBelow
-                          isRevealed={job.isApplied || job.is_applied}
-                          disabled={job.isApplied || job.is_applied}
-                          onClick={(e) => { e.stopPropagation(); if (!(job.isApplied || job.is_applied)) handleApply(job); }}
+                          isRevealed={job.is_applied}
+                          disabled={job.is_applied}
+                          onClick={(e) => { e.stopPropagation(); if (!(job.is_applied)) handleApply(job); }}
                           size="sm"
                         />
                       </div>

@@ -58,7 +58,7 @@ const FindJobCard: React.FC<FindJobCardProps> = ({
   const mountTimestamp = useRef(Date.now());
   const [emailRevealed, setEmailRevealed] = useState(false);
   const [contactRevealed, setContactRevealed] = useState(false);
-  const isApplied = job.isApplied || job.is_applied;
+  const isApplied = job.is_applied;
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;

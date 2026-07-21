@@ -1989,9 +1989,9 @@ function JobManagementContent() {
                                     <PlatformActionButton
                                       label="Apply"
                                       icon={FiSend}
-                                      isRevealed={selectedJob.isApplied || selectedJob.is_applied}
-                                      disabled={selectedJob.isApplied || selectedJob.is_applied}
-                                      onClick={selectedJob.isApplied || selectedJob.is_applied ? undefined : () =>
+                                      isRevealed={selectedJob.is_applied}
+                                      disabled={selectedJob.is_applied}
+                                      onClick={selectedJob.is_applied ? undefined : () =>
                                         applyFromRecommendation(selectedJob)
                                       }
                                     />
@@ -2109,10 +2109,10 @@ function JobManagementContent() {
                               <PlatformActionButton
                                 label="Apply Now"
                                 icon={FiSend}
-                                isRevealed={job.isApplied || job.is_applied}
+                                isRevealed={job.is_applied}
                                 className="w-full"
-                                disabled={job.isApplied || job.is_applied}
-                                onClick={job.isApplied || job.is_applied ? undefined : () => applyFromRecommendation(job)}
+                                disabled={job.is_applied}
+                                onClick={job.is_applied ? undefined : () => applyFromRecommendation(job)}
                               />
                             </div>
                           </div>
@@ -2691,7 +2691,7 @@ function NearbyJobsMapView({ postings, radius, setRadius, onSave, onConnectReque
                       onClick={(e) => { e.stopPropagation(); markRevealed(job.id, 'contact'); onShowContact(e, job); }}
                       size="sm"
                     />
-                    {job.isApplied || job.is_applied ? (
+                    {job.is_applied ? (
                       <PlatformActionButton
                         icon={FiCheck}
                         label="Applied"
