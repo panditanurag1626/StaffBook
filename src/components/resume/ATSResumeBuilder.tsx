@@ -100,14 +100,14 @@ export default function ATSResumeBuilder() {
   // render produce identical HTML (prevents hydration mismatch).
   React.useEffect(() => { setMounted(true); }, []);
 
-  const uploadId = !mounted ? null : searchParams.get('upload_id');
-  const resumeId = !mounted ? null : searchParams.get('resume_id');
-  const templateId = !mounted ? null : searchParams.get('template_id');
+  const uploadId = !mounted ? null : (searchParams?.get('upload_id') ?? null);
+  const resumeId = !mounted ? null : (searchParams?.get('resume_id') ?? null);
+  const templateId = !mounted ? null : (searchParams?.get('template_id') ?? null);
   const { user } = useAuth();
   const isPremium = user?.user_balance_job_seeker?.premium_designs_available === 1 || (user?.userBalance?.no_of_resume ?? 0) > 0;
 
   const updateUrlWithId = (newId: string | number) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() ?? window.location.search);
     params.set('resume_id', newId.toString());
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -613,15 +613,7 @@ export default function ATSResumeBuilder() {
 
         // Auto-save only if it's a freshly uploaded resume (no resumeId yet)
         if (!resumeId && !builderId) {
-          autoSaveResume(mappedData).then(() => {
-            // Only clear localStorage after auto-save succeeds
-            localStorage.removeItem(storageKey);
-          }).catch(() => {
-            // Keep localStorage data on failure so it can be retried
-          });
-        } else {
-          // Already has an ID from a previous save; safe to clear
-          localStorage.removeItem(storageKey);
+          autoSaveResume(mappedData);
         }
       } catch (e) {
         console.error("Failed to parse resume data", e);
