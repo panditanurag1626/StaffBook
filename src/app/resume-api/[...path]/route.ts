@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Destination origin for the proxy — set via server-only env var.
+ * Falls back to NEXT_PUBLIC_RESUME_API_ORIGIN (useful when the server-only
+ * var cannot be set, e.g. preview deployments).
  * Must be a full URL (https://...) — NOT a relative path.
  *
  * Example:
  *   RESUME_API_ORIGIN=https://resume.codekrafters.co.in
+ *   NEXT_PUBLIC_RESUME_API_ORIGIN=https://resume.codekrafters.co.in
  */
-const RESUME_API_ORIGIN = process.env.RESUME_API_ORIGIN || '';
+const RESUME_API_ORIGIN = process.env.RESUME_API_ORIGIN || process.env.NEXT_PUBLIC_RESUME_API_ORIGIN || '';
 
 /**
  * Proxy /resume-api/* → external Resume API.
