@@ -15,7 +15,8 @@ interface ProfileLayoutProps {
   showSidebar?: boolean;
   showStories?: boolean;
   showJobSearchBar?: boolean;
-  showBanner?: boolean; // Added option to hide banner if needed
+  showBanner?: boolean;
+  noTopPadding?: boolean;
 }
 
 const ProfileLayout: React.FC<ProfileLayoutProps> = ({
@@ -23,7 +24,8 @@ const ProfileLayout: React.FC<ProfileLayoutProps> = ({
   showSidebar = true,
   showStories = true,
   showJobSearchBar = true,
-  showBanner = true
+  showBanner = true,
+  noTopPadding = false
 }) => {
   const { isSidebarOpen, setIsSidebarOpen } = useAuth();
 
@@ -31,7 +33,7 @@ const ProfileLayout: React.FC<ProfileLayoutProps> = ({
 
   return (
     <div className="min-h-screen w-full bg-[#f3f2ed]">
-      <div className="max-w-7xl mx-auto pt-[90px] px-2 sm:px-4 lg:px-8 pb-16 lg:pb-0">
+      <div className={`max-w-7xl mx-auto ${noTopPadding ? 'pt-0' : 'pt-[90px]'} px-2 sm:px-4 lg:px-8 pb-16 lg:pb-0`}>
 
 
         {/* Mobile Sidebar Overlay */}

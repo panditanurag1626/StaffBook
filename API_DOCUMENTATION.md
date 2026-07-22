@@ -622,12 +622,12 @@ POST /api/templates/{id}/html
 |-------|------|----|-------------|
 | `id` | number | path | Template numeric ID |
 
-**Body:** Same as `/render` endpoint.
+**Body:** Same as `/render` endpoint. 
 
 **Example:**
 
 ```js
-const res = await fetch("http://localhost:3000/api/templates/1/html", {
+const res = await fetch("http://localhost:3000/api/templates/1/html", { 
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ upload_id: "664f1a2b3c..." }),

@@ -1,5 +1,5 @@
 "use client";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/context/AuthContext";
@@ -11,12 +11,17 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isMeetingPage = pathname?.startsWith("/meeting");
   const isLandingPage = pathname === "/" || pathname === "/home";
+  const resumeTab = searchParams.get("resumeTab");
+  const isResumeBuilder = pathname?.startsWith("/profile/jobs") && (resumeTab === "builder" || resumeTab === "uploadBuilder");
+
+  const hideChrome = isMeetingPage || isResumeBuilder;
 
   return (
     <>
-      {!isMeetingPage && !isLandingPage && <Navbar />}
+      {!hideChrome && !isLandingPage && <Navbar />}
       {isLandingPage && (
         <div className="fixed top-0 right-0 z-50 p-4">
           <button
@@ -27,10 +32,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </button>
         </div>
       )}
-      <main className={!isMeetingPage ? `min-h-screen ${!isLandingPage ? 'pb-[80px] lg:pb-0' : ''}` : "h-screen"}>
+      <main className={!hideChrome ? `min-h-screen ${!isLandingPage ? 'pb-[80px] lg:pb-0' : ""}` : "min-h-screen"}>
         {children}
       </main>
-      {!isMeetingPage && (
+      {!hideChrome && (
         <>
           <Footer showMobile={isLandingPage} />
           {!isLandingPage && <MobileBottomNav />}

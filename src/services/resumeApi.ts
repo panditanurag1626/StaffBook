@@ -354,43 +354,43 @@ export async function matchJobDescription(
   return data?.data ?? data;
 }
 
-/** POST /api/ai-generate-text — AI-generate achievement bullets */
+/** POST /api/ai-generate-text — AI-generate achievement bullets (local route) */
 export async function aiGenerateText(
   body: { resume: Record<string, unknown>; attempt_number?: number },
 ): Promise<Record<string, unknown>> {
-  const { data } = await resumeApiClient.post('/api/ai-generate-text', body);
+  const { data } = await axios.post('/api/ai-generate-text', body);
   return data?.data ?? data;
 }
 
-/** POST /api/ai-apply — apply all AI suggestions at once */
+/** POST /api/ai-apply — apply all AI suggestions at once (local route) */
 export async function aiApplyAll(
   body: { resume: Record<string, unknown>; ai_analysis: Record<string, unknown> },
 ): Promise<Record<string, unknown>> {
-  const { data } = await resumeApiClient.post('/api/ai-apply', body);
+  const { data } = await axios.post('/api/ai-apply', body);
   return data?.data ?? data;
 }
 
-/** POST /api/ai-apply/summary — apply summary rewrite only */
+/** POST /api/ai-apply/summary — apply summary rewrite only (local route) */
 export async function aiApplySummary(
   body: { resume: Record<string, unknown>; summary_rewrite: string },
 ): Promise<Record<string, unknown>> {
-  const { data } = await resumeApiClient.post('/api/ai-apply/summary', body);
+  const { data } = await axios.post('/api/ai-apply/summary', body);
   return data?.data ?? data;
 }
 
-/** POST /api/ai-apply/keywords — apply keyword suggestions only */
+/** POST /api/ai-apply/keywords — apply keyword suggestions only (local route) */
 export async function aiApplyKeywords(
   body: { resume: Record<string, unknown>; keyword_suggestions: Array<Record<string, string>> },
 ): Promise<Record<string, unknown>> {
-  const { data } = await resumeApiClient.post('/api/ai-apply/keywords', body);
+  const { data } = await axios.post('/api/ai-apply/keywords', body);
   return data?.data ?? data;
 }
 
-/** POST /api/ai-apply/verbs — apply action verb upgrades only */
+/** POST /api/ai-apply/verbs — apply action verb upgrades only (local route) */
 export async function aiApplyVerbs(
   body: { resume: Record<string, unknown>; action_verb_upgrades: Array<{ from: string; to: string }> },
 ): Promise<Record<string, unknown>> {
-  const { data } = await resumeApiClient.post('/api/ai-apply/verbs', body);
+  const { data } = await axios.post('/api/ai-apply/verbs', body);
   return data?.data ?? data;
 }
 

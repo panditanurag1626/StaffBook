@@ -28,6 +28,7 @@ interface ResumeVersion {
   size: string;
   upload_id?: string;
   raw_data?: any;
+  template_data?: any;
   atsScore?: number;
 }
 
@@ -160,6 +161,7 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
               size: "1.2 MB", // placeholder
               upload_id: parsedJson.upload_id?.toString() || "",
               raw_data: parsedJson,
+              template_data: item.template_data_json || null,
               atsScore: calculateATSScoreFromParsedData(parsedJson)
             };
           });
@@ -306,26 +308,27 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
     </button>
   );
 
+  const usedTemplateIds = resumeVersions
+    .map(r => {
+      const td = r.template_data;
+      if (typeof td === 'string') try { return JSON.parse(td); } catch { return {}; }
+      return td || {};
+    })
+    .filter((td: any) => td?.id)
+    .map((td: any) => String(td.id));
+
   return (
     <div className={`w-full ${THEME.colors.background.page}`}>
       {/* Show ATS Builder for builder tab */}
       {activeTab === "builder" && (
-        <div className="p-4 md:p-8 pb-28 lg:pb-8">
-          <StepProgressBar activeStep={searchParams.get('template_id') ? 3 : 2} />
-          <div className="mt-6">
-            <BackButton />
-          </div>
+        <div className="px-4 md:px-6 pb-28 lg:pb-6">
           <ATSResumeBuilder />
         </div>
       )}
 
       {activeTab === "uploadBuilder" && (
-        <div className="p-4 md:p-8">
-          <StepProgressBar activeStep={2} />
-          <div className="mt-6">
-            <BackButton />
-          </div>
-          <UploadResumeCard />
+        <div className="px-4 md:px-6 pb-28 lg:pb-6">
+          <ATSResumeBuilder />
         </div>
       )}
 
@@ -344,7 +347,7 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
               <BackButton />
             </div>
           </div>
-          <ResumeTemplates />
+          <ResumeTemplates usedTemplateIds={usedTemplateIds} />
         </div>
       )}
 
@@ -414,7 +417,7 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
           <div className={`${THEME.layout.spacing.xl} mt-12`}>
             <h3 className="text-2xl font-bold text-gray-900 mb-1">Choose the Perfect Template for Your Resume</h3>
             <p className="text-sm text-gray-500 mb-6">Pick a professional design to make your resume stand out</p>
-            <ResumeTemplates />
+            <ResumeTemplates usedTemplateIds={usedTemplateIds} />
           </div>
         </>
       )}

@@ -1120,8 +1120,8 @@ function JobManagementContent() {
   const hideResumeSidebar = activeTab === "resume" && (resumeTab === "builder" || resumeTab === "uploadBuilder");
 
   return (
-    <ProfileLayout showSidebar={!hideResumeSidebar} showStories={false} showJobSearchBar={false}>
-      <div className={`profile-page min-h-screen ${THEME.colors.background.page} pt-4 md:pt-6 lg:pt-8 pb-24 lg:pb-8 -mt-[30px]`}>
+    <ProfileLayout showSidebar={!hideResumeSidebar} showStories={false} showJobSearchBar={false} noTopPadding={hideResumeSidebar}>
+      <div className={`profile-page min-h-screen ${THEME.colors.background.page} ${hideResumeSidebar ? 'pt-0' : 'pt-4 md:pt-6 lg:pt-8'} pb-24 lg:pb-8 ${hideResumeSidebar ? '' : '-mt-[30px]'}`}>
         <div className="flex gap-2 md:gap-4 w-full px-1 md:px-3">
           <div className="w-full flex-1">
             {/* Enhanced Breadcrumb */}
@@ -1463,11 +1463,13 @@ function JobManagementContent() {
               </>
             ) : (
               <>
+                {!hideResumeSidebar && (
                 <ProfileSubMenu
                   menuItems={menuItems}
                   activeTab={activeTab}
                   onTabChange={(key) => setActiveTab(key as any)}
                 />
+                )}
 
                 {/* Stats Cards */}
                 {/* <div className="mt-[6px] mb-[3px]">

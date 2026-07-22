@@ -5,7 +5,7 @@ import { FALLBACK_TEMPLATES } from '@/lib/api/templates-fallback';
 import { THEME } from '../../styles/theme';
 import Card from '../shared/Card';
 import PremiumUpgradeModal from '../shared/PremiumUpgradeModal';
-import { FiStar, FiLoader } from 'react-icons/fi';
+import { FiStar, FiLoader, FiCheck } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
 
 interface Template {
@@ -27,7 +27,11 @@ interface Template {
   tags: string[];
 }
 
-const ResumeTemplates: React.FC = () => {
+interface ResumeTemplatesProps {
+  usedTemplateIds?: string[];
+}
+
+const ResumeTemplates: React.FC<ResumeTemplatesProps> = ({ usedTemplateIds = [] }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -361,6 +365,11 @@ const ResumeTemplates: React.FC = () => {
                   <FiStar size={10} fill="currentColor" /> Premium
                 </div>
               )}
+              {usedTemplateIds.includes(String(template.id)) && (
+                <div className="absolute top-3 left-3 bg-purple-600/90 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-bold text-white shadow-lg flex items-center gap-1 z-10">
+                  <FiCheck size={10} /> Current Design
+                </div>
+              )}
 
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 pointer-events-none" />
             </div>
@@ -374,9 +383,9 @@ const ResumeTemplates: React.FC = () => {
                   e.stopPropagation();
                   handleTemplateSelect(template);
                 }}
-                className="flex-shrink-0 text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors"
+                className={`flex-shrink-0 text-[10px] font-bold transition-colors ${usedTemplateIds.includes(String(template.id)) ? 'text-green-600' : 'text-purple-600 hover:text-purple-700'}`}
               >
-                Use
+                {usedTemplateIds.includes(String(template.id)) ? 'Applied' : 'Use'}
               </button>
             </div>
           </Card>

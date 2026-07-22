@@ -24,6 +24,10 @@ import {
   FiLayout,
   FiLoader,
   FiStar,
+  FiRefreshCw,
+  FiArrowLeft,
+  FiMaximize2,
+  FiMinimize2,
 } from "react-icons/fi";
 import { THEME } from "../../styles/theme";
 import Card from "../shared/Card";
@@ -33,7 +37,6 @@ import {
   withResumeApiBase,
   downloadTemplatePdf,
   openHtmlWindow,
-  fetchAtsScore,
   AtsScore,
   fetchSchema,
   matchJobDescription,
@@ -127,6 +130,7 @@ export default function ATSResumeBuilder() {
   const [suggestionsExpanded, setSuggestionsExpanded] = useState(false);
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'split' | 'preview' | 'editor'>('split');
   const [isFormActive, setIsFormActive] = useState(false);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -155,11 +159,15 @@ export default function ATSResumeBuilder() {
   const [jdText, setJdText] = useState("");
   const [jdMatchResult, setJdMatchResult] = useState<Record<string, any> | null>(null);
   const [jdMatchLoading, setJdMatchLoading] = useState(false);
+  const [jdPanelExpanded, setJdPanelExpanded] = useState(false);
 
   // AI Generate state
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiGeneratedText, setAiGeneratedText] = useState("");
   const [aiGenKey, setAiGenKey] = useState(0);
+  const [aiOptions, setAiOptions] = useState<string[]>([]);
+  const [aiPanelExpanded, setAiPanelExpanded] = useState(false);
+  const [aiSelectedOption, setAiSelectedOption] = useState<number | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<Record<string, any> | null>(null);
 
   // Schema sample
@@ -301,10 +309,13 @@ export default function ATSResumeBuilder() {
     setIsSaving(true);
     try {
       const parsedDataPayload = generateParsedDataPayload();
+      const storageKey = uploadId || resumeId || 'new';
+      const templateInfo = templateId ? { id: templateId, savedAt: new Date().toISOString() } : {};
+      localStorage.setItem(`selectedTemplate_${storageKey}`, JSON.stringify(templateInfo));
       const payload = {
         title: resumeData.personalInfo.fullName ? `${resumeData.personalInfo.fullName}'s Resume` : "My Resume",
         parsed_data: JSON.stringify(parsedDataPayload),
-        template_data: JSON.stringify({}),
+        template_data: JSON.stringify(templateInfo),
         status: 1
       };
 
@@ -433,7 +444,7 @@ export default function ATSResumeBuilder() {
     try { win.document.write(html); win.document.close(); } catch (e) { toast.error("Failed to open preview"); }
   };
 
-  // Calculate ATS Score
+  // Calculate ATS Score — comprehensive local heuristic (replaces broken API)
   const calculateATSScore = () => {
     let score = 0;
     const issues: string[] = [];
@@ -444,38 +455,74 @@ export default function ATSResumeBuilder() {
     let experienceScore = 0;
     let educationScore = 0;
     let skillsScore = 0;
+    let projectsScore = 0;
+    let certsScore = 0;
+    let quantifyScore = 0;
 
-    if (resumeData.personalInfo.fullName) { score += 10; personalInfo += 10; }
+    // --- Contact (max 30) ---
+    if (resumeData.personalInfo.fullName) { score += 8; personalInfo += 8; }
     else issues.push("Missing full name");
-
-    if (resumeData.personalInfo.email) { score += 10; personalInfo += 10; }
+    if (resumeData.personalInfo.email) { score += 8; personalInfo += 8; }
     else issues.push("Missing email");
-
-    if (resumeData.personalInfo.phone) { score += 10; personalInfo += 10; }
+    if (resumeData.personalInfo.phone) { score += 7; personalInfo += 7; }
     else issues.push("Missing phone number");
+    if (resumeData.personalInfo.location) { score += 4; personalInfo += 4; }
+    else suggestions.push("Add your location for better ATS匹配");
+    if (resumeData.personalInfo.linkedin) { score += 3; personalInfo += 3; }
 
-    if (resumeData.summary && resumeData.summary.length > 50) { score += 15; summaryScore += 15; }
-    else suggestions.push("Add a professional summary (50+ words)");
+    // --- Summary (max 15) ---
+    const summaryLen = (resumeData.summary || '').length;
+    if (summaryLen > 200) { score += 15; summaryScore = 15; }
+    else if (summaryLen > 100) { score += 12; summaryScore = 12; }
+    else if (summaryLen > 50) { score += 8; summaryScore = 8; suggestions.push("Expand summary to 200+ characters for better score"); }
+    else if (summaryLen > 0) { score += 4; summaryScore = 4; suggestions.push("Add a professional summary (200+ characters)"); }
+    else issues.push("No professional summary added");
 
+    // --- Experience (max 20) ---
     if (resumeData.experience.length > 0) {
-      score += 20; experienceScore += 20;
-      resumeData.experience.forEach((exp) => {
-        if (exp.description.length < 100) {
-          suggestions.push(`Add more details to ${exp.title} role`);
-        }
-      });
+      const exp = resumeData.experience[0];
+      const descLen = (exp.description || '').length;
+      if (descLen > 300) { score += 20; experienceScore = 20; }
+      else if (descLen > 150) { score += 16; experienceScore = 16; }
+      else if (descLen > 50) { score += 10; experienceScore = 10; suggestions.push("Add more details to your experience (300+ characters)"); }
+      else { score += 5; experienceScore = 5; suggestions.push("Flesh out your experience descriptions"); }
+      // Quantify bonus
+      const hasNumbers = /\d/.test(exp.description || '');
+      if (hasNumbers) { score += 3; quantifyScore = 3; }
+      else suggestions.push("Add numbers/metrics to experience (e.g. 'improved performance by 30%')");
     } else {
       issues.push("No work experience added");
     }
 
-    if (resumeData.education.length > 0) { score += 15; educationScore += 15; }
-    else issues.push("No education added");
+    // --- Education (max 12) ---
+    if (resumeData.education.length > 0) {
+      score += 12; educationScore = 12;
+    } else {
+      issues.push("No education added");
+    }
 
-    if (resumeData.skills.length >= 5) { score += 20; skillsScore += 20; }
-    else suggestions.push("Add at least 5 relevant skills");
+    // --- Skills (max 15) ---
+    const skillCount = resumeData.skills.length;
+    if (skillCount >= 10) { score += 15; skillsScore = 15; }
+    else if (skillCount >= 7) { score += 12; skillsScore = 12; }
+    else if (skillCount >= 5) { score += 9; skillsScore = 9; }
+    else if (skillCount >= 2) { score += 5; skillsScore = 5; suggestions.push("Add at least 7 skills for a stronger score"); }
+    else if (skillCount === 1) { score += 2; skillsScore = 2; suggestions.push("Add more skills (at least 5)"); }
+    else issues.push("No skills added");
+
+    // --- Projects (max 8) ---
+    const projects = (resumeData as any).projects || [];
+    if (projects.length >= 2) { score += 8; projectsScore = 8; }
+    else if (projects.length === 1) { score += 4; projectsScore = 4; }
+    else suggestions.push("Add 1-2 projects to boost your score");
+
+    // --- Certifications (max 5) ---
+    if (resumeData.certifications.length >= 2) { score += 5; certsScore = 5; }
+    else if (resumeData.certifications.length === 1) { score += 3; certsScore = 3; }
+    else suggestions.push("Add certifications to stand out");
 
     setAtsScore({
-      score,
+      score: Math.min(score, 100),
       issues,
       suggestions,
       categories: {
@@ -485,6 +532,23 @@ export default function ATSResumeBuilder() {
         education: educationScore,
         skills: skillsScore,
       },
+    });
+
+    // Also build an apiAtsScore-compatible object so the rich UI renders
+    setApiAtsScore({
+      overall_score: Math.min(score, 100),
+      breakdown: {
+        contact_info: personalInfo,
+        summary: summaryScore,
+        work_experience: experienceScore,
+        quantification: quantifyScore,
+        skills: skillsScore,
+        education: educationScore,
+        projects: projectsScore,
+        certifications: certsScore,
+      },
+      feedback: [...issues, ...suggestions],
+      stats: {},
     });
   };
 
@@ -520,35 +584,11 @@ export default function ATSResumeBuilder() {
     calculateATSScore();
   }, [resumeData]);
 
-  // Seed the real ATS analysis captured at upload time (instant, no request).
-  React.useEffect(() => {
-    if (!uploadId) return;
-    const saved = localStorage.getItem(`atsScores_${uploadId}`);
-    if (saved) {
-      try { setApiAtsScore(JSON.parse(saved)); } catch { /* ignore */ }
-    }
-  }, [uploadId]);
+  // Score is now computed entirely by calculateATSScore() above.
+  // No external API or localStorage seeding needed.
 
-  // Live, debounced re-scoring via the resume-api as the resume changes, so the
-  // displayed score always matches what the API would compute.
-  React.useEffect(() => {
-    const hasContent =
-      !!resumeData.personalInfo.fullName ||
-      resumeData.experience.length > 0 ||
-      resumeData.skills.length > 0;
-    if (!hasContent) return;
-
-    let cancelled = false;
-    const handle = setTimeout(async () => {
-      try {
-        const score = await fetchAtsScore(generateParsedDataPayload().data);
-        if (!cancelled && score) setApiAtsScore(score);
-      } catch {
-        /* keep last known score; local heuristic remains as fallback */
-      }
-    }, 800);
-    return () => { cancelled = true; clearTimeout(handle); };
-  }, [resumeData]);
+  // Live API re-scoring disabled — external backend returns 500.
+  // Local heuristic is the primary score; manual "Check ATS" button available.
 
   // Warn user before reload/leave that data will be lost (only if there's actual data)
   const hasResumeData = isEditMode || !!uploadId || resumeData.personalInfo.fullName || resumeData.experience.length > 0 || resumeData.education.length > 0 || resumeData.skills.length > 0;
@@ -655,9 +695,65 @@ export default function ATSResumeBuilder() {
     { id: "education", label: "Education", icon: <FiBook size={18} /> },
     { id: "skills", label: "Skills", icon: <FiCode size={18} /> },
     { id: "certifications", label: "Certifications", icon: <FiAward size={18} /> },
-    { id: "ai-tools", label: "AI Tools", icon: <FiStar size={18} /> },
-    { id: "jd-match", label: "JD Match", icon: <FiCheckCircle size={18} /> },
   ];
+
+  const renderFormContent = () => (
+    <div className="px-6 pb-6 pt-2">
+      {activeSection === "personal" && (
+        <PersonalInfoForm
+          resumeData={resumeData}
+          setResumeData={setResumeData}
+          onFocus={() => setIsFormActive(true)}
+          onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
+        />
+      )}
+      {activeSection === "summary" && (
+        <SummaryForm
+          resumeData={resumeData}
+          setResumeData={setResumeData}
+          onFocus={() => setIsFormActive(true)}
+          onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
+        />
+      )}
+      {activeSection === "experience" && (
+        <ExperienceForm
+          resumeData={resumeData}
+          setResumeData={setResumeData}
+          onFocus={() => setIsFormActive(true)}
+          onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
+        />
+      )}
+      {activeSection === "education" && (
+        <EducationForm
+          resumeData={resumeData}
+          setResumeData={setResumeData}
+          onFocus={() => setIsFormActive(true)}
+          onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
+        />
+      )}
+      {activeSection === "skills" && (
+        <SkillsForm
+          resumeData={resumeData}
+          setResumeData={setResumeData}
+          onFocus={() => setIsFormActive(true)}
+          onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
+        />
+      )}
+      {activeSection === "certifications" && (
+        <CertificationsForm
+          resumeData={resumeData}
+          setResumeData={setResumeData}
+          onFocus={() => setIsFormActive(true)}
+          onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
+        />
+      )}
+      {activeSection === "templates" && (
+        <div className="pt-2">
+          <ResumeTemplates />
+        </div>
+      )}
+    </div>
+  );
 
   // Unified score view: prefer the real API analysis, fall back to the local
   // heuristic. Category values are normalised to 0-100 either way.
@@ -698,27 +794,75 @@ export default function ATSResumeBuilder() {
   const dotColor = (v: number) =>
     v >= 80 ? "bg-green-500" : v >= 50 ? "bg-amber-500" : "bg-red-400";
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={openResumeWindow}
-          className="px-4 py-2.5 text-sm font-semibold flex items-center gap-2 bg-white border border-purple-300 text-purple-700 rounded-xl hover:bg-purple-50 transition-colors shadow-sm"
-        >
-          <FiEye size={18} />
-          Open Resume
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className={`${THEME.components.button.primary} px-6 py-2.5 text-sm font-semibold flex items-center gap-2 shadow-sm`}
-        >
-          {isSaving ? <FiLoader className="animate-spin" size={18} /> : <FiCheckCircle size={18} />}
-          {isSaving ? (isEditMode ? "Updating..." : "Saving...") : (isEditMode ? "Update Resume" : "Save Resume")}
-        </button>
+  const STEPS = [
+    { label: 'Start', sub: 'Create/Upload' },
+    { label: 'Job Details', sub: 'Fill Details' },
+    { label: 'Templates', sub: 'Design' },
+  ];
+  const activeStep = templateId ? 3 : 2;
+
+  const handleBackToResumes = () => {
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
+    params.set('tab', 'resume');
+    params.set('resumeTab', 'versions');
+    params.delete('upload_id');
+    params.delete('resume_id');
+    params.delete('template_id');
+    router.push(`/profile/jobs?${params.toString()}`);
+  };
+
+  const StepBar = () => (
+    <div className="pt-2 pb-2">
+      <div className="flex items-center justify-between max-w-2xl mx-auto">
+        {STEPS.map((step, i) => {
+          const stepNum = i + 1;
+          const isActive = stepNum <= activeStep;
+          return (
+            <div key={step.label} className="flex items-center flex-1 relative">
+              <div className="flex flex-col items-center relative z-10">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
+                  isActive ? 'bg-purple-600' : 'bg-gray-300'
+                }`}>
+                  <span className="text-white text-sm font-bold">{stepNum}</span>
+                </div>
+                <span className={`text-[11px] font-semibold mt-1.5 whitespace-nowrap transition-colors ${
+                  isActive ? 'text-purple-700' : 'text-gray-400'
+                }`}>{step.label}</span>
+                <span className={`text-[10px] -mt-0.5 transition-colors ${
+                  isActive ? 'text-gray-400' : 'text-gray-300'
+                }`}>{step.sub}</span>
+              </div>
+              {i < STEPS.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-2 mt-[-20px] transition-colors ${
+                  isActive ? 'bg-purple-400' : 'bg-gray-200'
+                }`} />
+              )}
+            </div>
+          );
+        })}
       </div>
-      {/* ATS Score - Top Banner */}
-      <Card>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Back to Resumes */}
+      <button
+        onClick={handleBackToResumes}
+        className="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors group cursor-pointer"
+      >
+        <div className="p-2 rounded-full bg-gray-100 group-hover:bg-purple-50 transition-colors">
+          <FiArrowLeft className="w-5 h-5" />
+        </div>
+        <span className="font-medium text-sm">Back to My Resumes</span>
+      </button>
+
+      {/* Step Progress Bar */}
+      <StepBar />
+
+      {/* ATS Score - Sticky Banner */}
+      <div className="sticky top-0 z-30 bg-[#f3f2ed] py-2 -mx-4 md:-mx-6 px-4 md:px-6">
+        <Card className="shadow-md">
         <Card.Content>
           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-3 flex-shrink-0">
@@ -747,7 +891,7 @@ export default function ATSResumeBuilder() {
             <div className="flex-1 hidden sm:block" />
 
             {/* Category Pills (each scored 0-100) */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               {atsView.categories.map((cat) => (
                 <div key={cat.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100">
                   <div className={`w-1.5 h-1.5 rounded-full ${dotColor(cat.value)}`} />
@@ -755,81 +899,490 @@ export default function ATSResumeBuilder() {
                   <span className={`text-[10px] font-bold ${scoreColor(cat.value)}`}>{cat.value}</span>
                 </div>
               ))}
-            </div>
-          </div>
-        </Card.Content>
-      </Card>
-
-      {/* Pro Tips Panel */}
-      <Card>
-        <Card.Content>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiCheckCircle size={18} className="text-purple-600" />
-              <h4 className="text-sm font-bold text-gray-900">Pro Tips</h4>
-            </div>
-            {!isPremium && (
-              <Link
-                href="/premium-services"
-                className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-700 transition-colors"
+              <button
+                onClick={() => calculateATSScore()}
+                className="ml-1 flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-purple-700 bg-purple-50 border border-purple-200 rounded-full hover:bg-purple-100 hover:border-purple-300 active:scale-95 transition-all shadow-sm"
               >
-                <FiStar size={14} />
-                Unlock Full Insights
-              </Link>
-            )}
+                <FiRefreshCw size={12} />
+                Check ATS
+              </button>
+            </div>
           </div>
-
-          {isPremium && atsView.issues.length > 0 && (
-            <div className="mt-3 space-y-2">
-              <p className="text-xs font-semibold text-red-700 flex items-center gap-1.5">
-                <FiAlertCircle size={14} /> Issues ({atsView.issues.length})
-              </p>
-              <ul className="space-y-1">
-                {atsView.issues.slice(0, 3).map((issue, idx) => (
-                  <li key={idx} className="text-[11px] text-red-600 flex items-start gap-1.5">
-                    <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                    {issue}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {isPremium && atsView.suggestions.length > 0 && (
-            <div className="mt-2 space-y-2">
-              <p className="text-xs font-semibold text-amber-700 flex items-center gap-1.5">
-                <FiCheckCircle size={14} /> Suggestions ({atsView.suggestions.length})
-              </p>
-              <ul className="space-y-1">
-                {atsView.suggestions.slice(0, 6).map((suggestion, idx) => (
-                  <li key={idx} className="text-[11px] text-amber-600 flex items-start gap-1.5">
-                    <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                    {suggestion}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {!isPremium && (
-            <div className="mt-3 p-3 rounded-lg bg-gray-50 border border-gray-100 text-center">
-              <FiStar size={20} className="mx-auto text-gray-300 mb-1" />
-              <p className="text-xs text-gray-500">
-                Get detailed issue analysis and personalized suggestions to improve your resume score.
-              </p>
-            </div>
-          )}
         </Card.Content>
       </Card>
+      </div>
 
-      {/* Two-Column Layout: Form + Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column: Form */}
-        <div className="space-y-6 min-w-0">
+      {/* ═══════════════════════════════════════════ */}
+      {/* AI SUGGESTIONS — Premium Panel              */}
+      {/* ═══════════════════════════════════════════ */}
+      <div className="rounded-2xl overflow-hidden border border-purple-100 bg-gradient-to-br from-purple-50 via-white to-indigo-50 shadow-sm">
+        {/* Header — always visible, toggles expand */}
+        <button
+          onClick={() => setAiPanelExpanded(v => !v)}
+          className="w-full flex items-center gap-3 px-5 py-4 text-left group"
+        >
+          <div className="relative flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-200">
+              <FiStar className="text-white" size={18} />
+            </div>
+            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              AI Resume Enhancement
+              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gradient-to-r from-purple-600 to-indigo-600 text-white">AI</span>
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">Generate bullet points, rewrite summary, optimize for ATS</p>
+          </div>
+          <FiChevronDown
+            size={18}
+            className={`text-gray-400 transition-transform duration-200 ${aiPanelExpanded ? 'rotate-180' : ''}`}
+          />
+        </button>
+
+        {/* Expandable content */}
+        {aiPanelExpanded && (
+          <div className="px-5 pb-5 space-y-4 border-t border-purple-100 pt-4">
+            {/* AI Generate Text */}
+            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-indigo-100 flex items-center justify-center">
+                  <FiFileText size={12} className="text-indigo-600" />
+                </div>
+                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wide">AI Bullet Writer</h4>
+              </div>
+              <p className="text-[11px] text-gray-500 mb-3">Generate 3 AI-powered achievement bullets to compare and pick the best.</p>
+              <button
+                onClick={async () => {
+                  setAiGenerating(true);
+                  setAiOptions([]);
+                  setAiSelectedOption(null);
+                  setAiGeneratedText("");
+                  try {
+                    const payload = generateParsedDataPayload();
+                    const parsed = toJsonResumeFormat(payload?.data ?? payload);
+                    const results = await Promise.all(
+                      [1, 2, 3].map(num =>
+                        aiGenerateText({ resume: parsed, attempt_number: num }).then(r => (r?.generated_text || r?.text || "") as string)
+                      )
+                    );
+                    const valid = results.filter(t => t.length > 0);
+                    if (valid.length > 0) {
+                      setAiOptions(valid);
+                      toast.success(`${valid.length} options generated!`);
+                    } else {
+                      toast.error("No text generated");
+                    }
+                  } catch (e: any) {
+                    const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "AI generation failed";
+                    toast.error(msg);
+                  }
+                  setAiGenerating(false);
+                }}
+                disabled={aiGenerating}
+                className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-xs font-bold hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 flex items-center gap-2 shadow-md shadow-indigo-200 transition-all hover:shadow-lg hover:shadow-indigo-300 active:scale-[0.98]"
+              >
+                {aiGenerating ? (
+                  <><FiLoader className="animate-spin" size={14} /> Generating...</>
+                ) : (
+                  <><FiStar size={14} /> Generate with AI</>
+                )}
+              </button>
+
+              {/* 3 Options Comparison */}
+              {aiOptions.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Choose an option:</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {aiOptions.map((opt, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => { setAiSelectedOption(idx); setAiGeneratedText(opt); setAiGenKey(k => k + 1); }}
+                        className={`border-2 rounded-xl p-3 cursor-pointer transition-all ${
+                          aiSelectedOption === idx
+                            ? 'border-purple-500 bg-purple-50 shadow-md ring-1 ring-purple-200'
+                            : 'border-gray-100 bg-gray-50/50 hover:border-purple-300 hover:bg-purple-50/30'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            aiSelectedOption === idx ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-600'
+                          }`}>
+                            Option {idx + 1}
+                          </span>
+                          {aiSelectedOption === idx && (
+                            <span className="text-[9px] font-bold text-purple-600 flex items-center gap-1">
+                              <FiCheckCircle size={10} /> Selected
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-gray-600 leading-relaxed whitespace-pre-line">{opt}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {aiSelectedOption !== null && (
+                    <div className="mt-2 space-y-2">
+                      <textarea
+                        className="w-full border border-purple-200 rounded-lg p-3 text-xs text-gray-800 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        rows={6}
+                        key={aiGenKey}
+                        defaultValue={aiGeneratedText}
+                        onChange={(e) => setAiGeneratedText(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(aiGeneratedText); toast.success("Copied!"); }}
+                          className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50 font-medium"
+                        >
+                          Copy
+                        </button>
+                        <button
+                          onClick={() => {
+                            const exp = resumeData.experience;
+                            if (exp.length > 0) {
+                              const updated = [...exp];
+                              updated[0] = { ...updated[0], description: updated[0].description ? updated[0].description + "\n" + aiGeneratedText : aiGeneratedText };
+                              setResumeData(prev => ({ ...prev, experience: updated }));
+                              toast.success("Added to first experience!");
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700"
+                        >
+                          Add to Experience
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* AI Apply Quick Actions */}
+            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-purple-100 flex items-center justify-center">
+                  <FiRefreshCw size={12} className="text-purple-600" />
+                </div>
+                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wide">One-Click Optimizations</h4>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      const payload = generateParsedDataPayload();
+                      const parsed = toJsonResumeFormat(payload?.data ?? payload);
+                      const summary = resumeData.summary;
+                      if (!summary) { toast.error("No summary to rewrite"); return; }
+                      const result = await aiApplySummary({ resume: parsed, summary_rewrite: summary });
+                      if (result?.resume) toast.success("Summary applied!");
+                      else toast.error("No response");
+                    } catch (e: any) {
+                      const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply failed";
+                      toast.error(msg);
+                    }
+                  }}
+                  className="px-3 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-center"
+                >
+                  Rewrite Summary
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const payload = generateParsedDataPayload();
+                      const parsed = toJsonResumeFormat(payload?.data ?? payload);
+                      const skillsArr = Array.isArray(resumeData.skills) ? resumeData.skills : [];
+                      const kws = skillsArr.map((s: string) => ({ keyword: s, section: "skills" }));
+                      if (!kws.length) { toast.error("No skills to optimize"); return; }
+                      const result = await aiApplyKeywords({ resume: parsed, keyword_suggestions: kws });
+                      if (result?.resume) toast.success("Keywords optimized!");
+                      else toast.error("No response");
+                    } catch (e: any) {
+                      const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply failed";
+                      toast.error(msg);
+                    }
+                  }}
+                  className="px-3 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-center"
+                >
+                  Optimize Keywords
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const payload = generateParsedDataPayload();
+                      const parsed = toJsonResumeFormat(payload?.data ?? payload);
+                      const expArr = Array.isArray(resumeData.experience) ? resumeData.experience : [];
+                      const upgrades = expArr.filter((e: any) => e.description).map((e: any) => ({ from: "", to: e.title || "" }));
+                      if (!upgrades.length) { toast.error("No experience to upgrade"); return; }
+                      const result = await aiApplyVerbs({ resume: parsed, action_verb_upgrades: upgrades });
+                      if (result?.resume) toast.success("Action verbs upgraded!");
+                      else toast.error("No response");
+                    } catch (e: any) {
+                      const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply failed";
+                      toast.error(msg);
+                    }
+                  }}
+                  className="px-3 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-center"
+                >
+                  Upgrade Verbs
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const payload = generateParsedDataPayload();
+                      const parsed = toJsonResumeFormat(payload?.data ?? payload);
+                      const skillsArr = Array.isArray(resumeData.skills) ? resumeData.skills : [];
+                      const expArr = Array.isArray(resumeData.experience) ? resumeData.experience : [];
+                      const summary = resumeData.summary ?? "";
+                      const kws = skillsArr.map((s: string) => ({ keyword: s, section: "skills" }));
+                      const upgrades = expArr.filter((e: any) => e.description).map((e: any) => ({ from: "", to: e.title || "" }));
+                      if (!summary && !kws.length && !upgrades.length) {
+                        toast.error("Fill summary, skills, or experience first");
+                        return;
+                      }
+                      const result = await aiApplyAll({
+                        resume: parsed,
+                        ai_analysis: { summary_rewrite: summary || "", keyword_suggestions: kws, action_verb_upgrades: upgrades },
+                      });
+                      if (result?.resume) toast.success("All optimizations applied!");
+                      else toast.error("No response");
+                    } catch (e: any) {
+                      const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply all failed";
+                      toast.error(msg);
+                    }
+                  }}
+                  className="px-3 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md shadow-purple-200 hover:shadow-lg hover:shadow-purple-300 transition-all active:scale-[0.98] col-span-2 text-center"
+                >
+                  Apply All Optimizations
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ═══════════════════════════════════════════ */}
+      {/* JD MATCH — Premium Panel                    */}
+      {/* ═══════════════════════════════════════════ */}
+      <div className="rounded-2xl overflow-hidden border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50 shadow-sm">
+        <button
+          onClick={() => setJdPanelExpanded(v => !v)}
+          className="w-full flex items-center gap-3 px-5 py-4 text-left group"
+        >
+          <div className="flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-200">
+              <FiCheckCircle className="text-white" size={18} />
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              Job Description Match
+              {jdMatchResult && (
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  (jdMatchResult.match_score as number || 0) >= 70 ? 'bg-green-100 text-green-700'
+                  : (jdMatchResult.match_score as number || 0) >= 40 ? 'bg-amber-100 text-amber-700'
+                  : 'bg-red-100 text-red-700'
+                }`}>
+                  {jdMatchResult.match_score ?? jdMatchResult.score ?? "N/A"}%
+                </span>
+              )}
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">Compare your resume against a job description</p>
+          </div>
+          <FiChevronDown
+            size={18}
+            className={`text-gray-400 transition-transform duration-200 ${jdPanelExpanded ? 'rotate-180' : ''}`}
+          />
+        </button>
+
+        {jdPanelExpanded && (
+          <div className="px-5 pb-5 space-y-4 border-t border-emerald-100 pt-4">
+            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Paste Job Description</label>
+              <textarea
+                className="w-full border border-gray-200 rounded-xl p-3 text-xs text-gray-800 bg-gray-50/50 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition-all"
+                rows={5}
+                placeholder="Paste the job description here..."
+                value={jdText}
+                onChange={(e) => setJdText(e.target.value)}
+              />
+              <button
+                onClick={async () => {
+                  if (!jdText.trim()) { toast.error("Paste a job description first"); return; }
+                  setJdMatchLoading(true);
+                  setJdMatchResult(null);
+                  try {
+                    const parsed = toJsonResumeFormat(generateParsedDataPayload().data);
+                    const result = await matchJobDescription({ resume: parsed, job_description: jdText });
+                    setJdMatchResult(result);
+                    toast.success("Match analysis complete!");
+                  } catch (e: any) {
+                    const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "JD match failed";
+                    toast.error(msg);
+                  }
+                  setJdMatchLoading(false);
+                }}
+                disabled={jdMatchLoading}
+                className="mt-3 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-xs font-bold hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 flex items-center gap-2 shadow-md shadow-emerald-200 transition-all hover:shadow-lg active:scale-[0.98]"
+              >
+                {jdMatchLoading ? <><FiLoader className="animate-spin" size={14} /> Analyzing...</> : "Analyze Match"}
+              </button>
+
+              {jdMatchResult && (
+                <div className="mt-4 rounded-xl border border-gray-100 p-4 space-y-3 bg-gray-50/50">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Match Score</span>
+                    <span className={`text-2xl font-bold ${
+                      (jdMatchResult.match_score as number || 0) >= 70 ? "text-green-600"
+                      : (jdMatchResult.match_score as number || 0) >= 40 ? "text-amber-600" : "text-red-600"
+                    }`}>
+                      {jdMatchResult.match_score ?? jdMatchResult.score ?? "N/A"}%
+                    </span>
+                  </div>
+                  {Array.isArray(jdMatchResult.matched_keywords) && jdMatchResult.matched_keywords.length > 0 && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Matched Keywords</span>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {jdMatchResult.matched_keywords.map((kw: string, i: number) => (
+                          <span key={i} className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-semibold">{kw}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {Array.isArray(jdMatchResult.missing_keywords) && jdMatchResult.missing_keywords.length > 0 && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Missing Keywords</span>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {jdMatchResult.missing_keywords.map((kw: string, i: number) => (
+                          <span key={i} className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-[10px] font-semibold">{kw}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {jdMatchResult.suggestions && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Suggestions</span>
+                      <ul className="list-disc list-inside text-xs text-gray-600 mt-1.5 space-y-0.5">
+                        {(Array.isArray(jdMatchResult.suggestions) ? jdMatchResult.suggestions : [jdMatchResult.suggestions]).map((s: string, i: number) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* View Toggle Buttons */}
+      <div className="flex items-center justify-center gap-1 p-1 bg-gray-100 rounded-xl w-fit mx-auto">
+        <button
+          onClick={() => setViewMode('editor')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            viewMode === 'editor' ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <FiEdit2 size={14} /> Editor
+        </button>
+        <button
+          onClick={() => setViewMode('split')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            viewMode === 'split' ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <FiMinimize2 size={14} /> Split
+        </button>
+        <button
+          onClick={() => setViewMode('preview')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            viewMode === 'preview' ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <FiMaximize2 size={14} /> Preview
+        </button>
+      </div>
+
+      {/* ═══════════════════════════════════════════ */}
+      {/* MODE: PREVIEW — slim sidebar + full preview */}
+      {/* ═══════════════════════════════════════════ */}
+      {viewMode === 'preview' && (
+        <div className="grid grid-cols-[48px_1fr] gap-4">
+          {/* Slim Icon Sidebar */}
+          <div className="flex flex-col items-center gap-1 pt-2">
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                onClick={() => { setActiveSection(section.id); setViewMode('split'); }}
+                title={section.label}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                  activeSection === section.id
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                }`}
+              >
+                {section.icon}
+              </button>
+            ))}
+            <button
+              onClick={() => { setActiveSection('templates'); setViewMode('split'); }}
+              title="Templates"
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                activeSection === 'templates' ? 'bg-purple-100 text-purple-700' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+              }`}
+            >
+              <FiLayout size={18} />
+            </button>
+          </div>
+
+          {/* Full Width Preview */}
+          <div>
+            <Card>
+              <Card.Header>
+                <div className="flex items-center justify-between">
+                  <h3 className={THEME.components.typography.cardTitle}>Resume Preview</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setViewMode('split')}
+                      className="p-2 rounded-lg text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                      title="Back to Editor"
+                    >
+                      <FiArrowLeft size={18} />
+                    </button>
+                    <button
+                      onClick={handleDownloadPdf}
+                      className={`${THEME.components.button.primary} px-3 py-1.5 text-xs flex items-center gap-2 ${!templateId ? 'opacity-50' : ''}`}
+                    >
+                      <FiDownload size={16} /> Download PDF
+                    </button>
+                  </div>
+                </div>
+              </Card.Header>
+              <Card.Content>
+                <div className={`border border-gray-200 rounded-lg bg-white min-h-[calc(100vh-200px)] shadow-sm flex justify-center overflow-hidden ${templateId ? 'p-0' : 'p-8'}`}>
+                  {templateId ? (
+                    <div className="relative w-full h-full">
+                      <LivePreview templateId={templateId} groupedData={getGroupedData()} scale={0.75} />
+                    </div>
+                  ) : (
+                    <ResumePreview data={resumeData} />
+                  )}
+                </div>
+              </Card.Content>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════ */}
+      {/* MODE: EDITOR — full width form, no preview  */}
+      {/* ═══════════════════════════════════════════ */}
+      {viewMode === 'editor' && (
+        <div className="max-w-3xl mx-auto">
           <Card noPadding>
             {/* Tab Navigation with Scroll Arrows */}
             <div className="relative">
-              {/* Left Scroll Arrow */}
               {showLeftArrow && (
                 <button
                   onClick={() => scrollTabs('left')}
@@ -842,8 +1395,6 @@ export default function ATSResumeBuilder() {
                   </div>
                 </button>
               )}
-
-              {/* Right Scroll Arrow */}
               {showRightArrow && (
                 <button
                   onClick={() => scrollTabs('right')}
@@ -856,8 +1407,6 @@ export default function ATSResumeBuilder() {
                   </div>
                 </button>
               )}
-
-              {/* Tabs Container */}
               <div
                 ref={scrollContainerRef}
                 className="flex border-b border-gray-100 overflow-x-auto scrollbar-hide px-4"
@@ -888,466 +1437,142 @@ export default function ATSResumeBuilder() {
               </div>
             </div>
 
-            <div className="px-6 pb-6 pt-12">
-              {activeSection === "personal" && (
-                <PersonalInfoForm
-                  resumeData={resumeData}
-                  setResumeData={setResumeData}
-                  onFocus={() => setIsFormActive(true)}
-                  onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
-                />
-              )}
-              {activeSection === "summary" && (
-                <SummaryForm
-                  resumeData={resumeData}
-                  setResumeData={setResumeData}
-                  onFocus={() => setIsFormActive(true)}
-                  onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
-                />
-              )}
-              {activeSection === "experience" && (
-                <ExperienceForm
-                  resumeData={resumeData}
-                  setResumeData={setResumeData}
-                  onFocus={() => setIsFormActive(true)}
-                  onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
-                />
-              )}
-              {activeSection === "education" && (
-                <EducationForm
-                  resumeData={resumeData}
-                  setResumeData={setResumeData}
-                  onFocus={() => setIsFormActive(true)}
-                  onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
-                />
-              )}
-              {activeSection === "skills" && (
-                <SkillsForm
-                  resumeData={resumeData}
-                  setResumeData={setResumeData}
-                  onFocus={() => setIsFormActive(true)}
-                  onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
-                />
-              )}
-              {activeSection === "certifications" && (
-                <CertificationsForm
-                  resumeData={resumeData}
-                  setResumeData={setResumeData}
-                  onFocus={() => setIsFormActive(true)}
-                  onBlur={() => setTimeout(() => setIsFormActive(false), 200)}
-                />
-              )}
-              {activeSection === "ai-tools" && (
-                <div className="space-y-6">
-                  <Card>
-                    <Card.Header>
-                      <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <FiStar className="text-purple-600" /> AI Tools
-                      </h3>
-                    </Card.Header>
-                    <Card.Body className="space-y-4">
-                      {/* Load Schema Sample */}
-                      <div>
-                        <button
-                          onClick={async () => {
-                            setSchemaLoading(true);
-                            try {
-                              const schema = await fetchSchema();
-                              const sample = schema?.sample_resume as Record<string, any> || {};
-                              if (sample.basics) {
-                                setResumeData(prev => ({
-                                  ...prev,
-                                  personalInfo: {
-                                    fullName: sample.basics.name || "",
-                                    email: sample.basics.email || "",
-                                    phone: sample.basics.phone || "",
-                                    location: sample.basics.location || "",
-                                    linkedin: sample.basics.profiles?.find((p: any) => p.network === "LinkedIn")?.url || "",
-                                    portfolio: sample.basics.url || "",
-                                  },
-                                  summary: sample.basics.summary || "",
-                                  experience: (sample.work || []).map((w: any, i: number) => ({
-                                    id: Date.now().toString() + i,
-                                    title: w.position || "",
-                                    company: w.name || "",
-                                    location: w.location || "",
-                                    startDate: w.startDate || "",
-                                    endDate: w.endDate || "",
-                                    current: !w.endDate,
-                                    description: (w.highlights || []).join("\n"),
-                                  })),
-                                  education: (sample.education || []).map((e: any, i: number) => ({
-                                    id: Date.now().toString() + i,
-                                    degree: e.studyType || "",
-                                    institution: e.institution || "",
-                                    location: e.location || "",
-                                    graduationDate: e.endDate || "",
-                                    gpa: e.score || "",
-                                  })),
-                                  skills: sample.skills?.flatMap?.((s: any) => s.keywords || [s.name]) || [],
-                                  certifications: (sample.certificates || []).map((c: any, i: number) => ({
-                                    id: Date.now().toString() + i,
-                                    name: c.name || "",
-                                    issuer: c.issuer || "",
-                                    date: c.date || "",
-                                  })),
-                                }));
-                                toast.success("Sample data loaded!");
-                              }
-                            } catch { toast.error("Failed to load schema"); }
-                            setSchemaLoading(false);
-                          }}
-                          disabled={schemaLoading}
-                          className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 disabled:opacity-50"
-                        >
-                          {schemaLoading ? "Loading..." : "Load Sample Data"}
-                        </button>
-                        <p className="text-xs text-gray-500 mt-1">Fill the builder with sample JSON Resume data</p>
-                      </div>
-
-                      {/* AI Generate Text */}
-                      <div className="border-t pt-4">
-                        <h4 className="font-semibold text-sm mb-2">AI Generate Achievement Bullets</h4>
-                        <button
-                          onClick={async () => {
-                            setAiGenerating(true);
-                            try {
-                              const payload = generateParsedDataPayload();
-                              const parsed = toJsonResumeFormat(payload?.data ?? payload);
-                              const result = await aiGenerateText({ resume: parsed });
-                              const text = (result?.generated_text || result?.text || "") as string;
-                              setAiGenKey(k => k + 1);
-                              setAiGeneratedText(text);
-                              if (text) toast.success("AI text generated!");
-                              else toast.error("No text generated");
-                            } catch (e: any) {
-                              const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "AI generation failed";
-                              console.error("Generate AI error:", { status: e?.response?.status, data: e?.response?.data, msg });
-                              toast.error(msg);
-                            }
-                            setAiGenerating(false);
-                          }}
-                          disabled={aiGenerating}
-                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50"
-                        >
-                          {aiGenerating ? "Generating..." : "Generate with AI"}
-                        </button>
-                        {typeof aiGeneratedText === 'string' && aiGeneratedText.length > 0 && (
-                          <div className="mt-3">
-                            <textarea
-                              className="w-full border rounded-lg p-3 text-sm"
-                              rows={10}
-                              key={aiGenKey}
-                              defaultValue={aiGeneratedText}
-                              onChange={(e) => setAiGeneratedText(e.target.value)}
-                              ref={(el) => { if (el) { el.focus(); el.scrollIntoView({ block: 'nearest' }); } }}
-                            />
-                            <div className="flex gap-2 mt-2">
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(aiGeneratedText);
-                                  toast.success("Copied!");
-                                }}
-                                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-                              >
-                                Copy
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const exp = resumeData.experience;
-                                  if (exp.length > 0) {
-                                    const updated = [...exp];
-                                    updated[0] = { ...updated[0], description: updated[0].description
-                                      ? updated[0].description + "\n" + aiGeneratedText
-                                      : aiGeneratedText };
-                                    setResumeData(prev => ({ ...prev, experience: updated }));
-                                    toast.success("Added to first experience!");
-                                  }
-                                }}
-                                className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
-                              >
-                                Add to Experience
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      {/* AI Apply Suggestions */}
-                      <div className="border-t pt-4 space-y-3">
-                        <h4 className="font-semibold text-sm">Apply AI Suggestions</h4>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={async () => {
-                              try {
-                                const payload = generateParsedDataPayload();
-                                const parsed = toJsonResumeFormat(payload?.data ?? payload);
-                                const summary = resumeData.summary;
-                                if (!summary) { toast.error("No summary to rewrite"); return; }
-                                const result = await aiApplySummary({ resume: parsed, summary_rewrite: summary });
-                                if (result?.resume) toast.success("Summary applied!");
-                                else toast.error("No response");
-                              } catch (e: any) {
-                                const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply failed";
-                                console.error("Apply Summary error:", { status: e?.response?.status, data: e?.response?.data, msg });
-                                toast.error(msg);
-                              }
-                            }}
-                            className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
-                          >
-                            Apply Summary
-                          </button>
-                          <button
-                            onClick={async () => {
-                              try {
-                                const payload = generateParsedDataPayload();
-                                const parsed = toJsonResumeFormat(payload?.data ?? payload);
-                                const skillsArr = Array.isArray(resumeData.skills) ? resumeData.skills : [];
-                                const kws = skillsArr.map((s: string) => ({ keyword: s, section: "skills" }));
-                                if (!kws.length) { toast.error("No skills to suggest"); return; }
-                                const result = await aiApplyKeywords({ resume: parsed, keyword_suggestions: kws });
-                                if (result?.resume) toast.success("Keywords applied!");
-                                else toast.error("No response");
-                              } catch (e: any) {
-                                const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply failed";
-                                console.error("Apply Keywords error:", { status: e?.response?.status, data: e?.response?.data, msg });
-                                toast.error(msg);
-                              }
-                            }}
-                            className="px-3 py-2 bg-teal-600 text-white rounded-lg text-xs font-semibold hover:bg-teal-700"
-                          >
-                            Apply Keywords
-                          </button>
-                          <button
-                            onClick={async () => {
-                              try {
-                                const payload = generateParsedDataPayload();
-                                const parsed = toJsonResumeFormat(payload?.data ?? payload);
-                                const expArr = Array.isArray(resumeData.experience) ? resumeData.experience : [];
-                                const upgrades = expArr
-                                  .filter((e: any) => e.description)
-                                  .map((e: any) => ({ from: "", to: e.title || "" }));
-                                if (!upgrades.length) { toast.error("No experience to upgrade"); return; }
-                                const result = await aiApplyVerbs({ resume: parsed, action_verb_upgrades: upgrades });
-                                if (result?.resume) toast.success("Verbs applied!");
-                                else toast.error("No response");
-                              } catch (e: any) {
-                                const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply failed";
-                                console.error("Apply Verbs error:", { status: e?.response?.status, data: e?.response?.data, msg });
-                                toast.error(msg);
-                              }
-                            }}
-                            className="px-3 py-2 bg-orange-600 text-white rounded-lg text-xs font-semibold hover:bg-orange-700"
-                          >
-                            Apply Verbs
-                          </button>
-                          <button
-                            onClick={async () => {
-                              try {
-                                const payload = generateParsedDataPayload();
-                                const parsed = toJsonResumeFormat(payload?.data ?? payload);
-                                const skillsArr = Array.isArray(resumeData.skills) ? resumeData.skills : [];
-                                const expArr = Array.isArray(resumeData.experience) ? resumeData.experience : [];
-                                const summary = resumeData.summary ?? "";
-                                const kws = skillsArr.map((s: string) => ({ keyword: s, section: "skills" }));
-                                const upgrades = expArr
-                                  .filter((e: any) => e.description)
-                                  .map((e: any) => ({ from: "", to: e.title || "" }));
-                                if (!summary && !kws.length && !upgrades.length) {
-                                  toast.error("No data to apply — fill summary, skills, or experience first");
-                                  return;
-                                }
-                                const result = await aiApplyAll({
-                                  resume: parsed,
-                                  ai_analysis: {
-                                    summary_rewrite: summary || "",
-                                    keyword_suggestions: kws,
-                                    action_verb_upgrades: upgrades,
-                                  },
-                                });
-                                if (result?.resume) toast.success("All suggestions applied!");
-                                else toast.error("No response");
-                              } catch (e: any) {
-                                const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Apply all failed";
-                                console.error("Apply All error:", { status: e?.response?.status, data: e?.response?.data, msg });
-                                toast.error(msg);
-                              }
-                            }}
-                            className="px-3 py-2 bg-purple-700 text-white rounded-lg text-xs font-semibold hover:bg-purple-800 col-span-2"
-                          >
-                            Apply All Suggestions
-                          </button>
-                        </div>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </div>
-              )}
-              {activeSection === "jd-match" && (
-                <div className="space-y-6">
-                  <Card>
-                    <Card.Header>
-                      <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <FiCheckCircle className="text-purple-600" /> Job Description Match
-                      </h3>
-                    </Card.Header>
-                    <Card.Body className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Paste Job Description</label>
-                        <textarea
-                          className="w-full border rounded-lg p-3 text-sm"
-                          rows={6}
-                          placeholder="Paste the job description here..."
-                          value={jdText}
-                          onChange={(e) => setJdText(e.target.value)}
-                        />
-                      </div>
-                      <button
-                        onClick={async () => {
-                          if (!jdText.trim()) { toast.error("Paste a job description first"); return; }
-                          setJdMatchLoading(true);
-                          setJdMatchResult(null);
-                          try {
-                            const parsed = toJsonResumeFormat(generateParsedDataPayload().data);
-                            const result = await matchJobDescription({
-                              resume: parsed,
-                              job_description: jdText,
-                            });
-                            setJdMatchResult(result);
-                            toast.success("Match analysis complete!");
-                          } catch (e: any) {
-                            const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "JD match failed";
-                            console.error("JD Match error:", { status: e?.response?.status, data: e?.response?.data, msg });
-                            toast.error(msg);
-                          }
-                          setJdMatchLoading(false);
-                        }}
-                        disabled={jdMatchLoading}
-                        className="px-6 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-700 disabled:opacity-50"
-                      >
-                        {jdMatchLoading ? "Analyzing..." : "Analyze Match"}
-                      </button>
-
-                      {jdMatchResult && (
-                        <div className="border rounded-xl p-4 space-y-3 bg-gray-50">
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-sm">Match Score</span>
-                            <span className={`text-2xl font-bold ${
-                              (jdMatchResult.match_score as number || 0) >= 70
-                                ? "text-green-600" : (jdMatchResult.match_score as number || 0) >= 40
-                                ? "text-yellow-600" : "text-red-600"
-                            }`}>
-                              {jdMatchResult.match_score ?? jdMatchResult.score ?? "N/A"}%
-                            </span>
-                          </div>
-                          {Array.isArray(jdMatchResult.matched_keywords) && (
-                            <div>
-                              <span className="text-xs font-semibold text-gray-500">Matched Keywords</span>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {jdMatchResult.matched_keywords.map((kw: string, i: number) => (
-                                  <span key={i} className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">{kw}</span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {Array.isArray(jdMatchResult.missing_keywords) && (
-                            <div>
-                              <span className="text-xs font-semibold text-gray-500">Missing Keywords</span>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {jdMatchResult.missing_keywords.map((kw: string, i: number) => (
-                                  <span key={i} className="px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-xs">{kw}</span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {jdMatchResult.suggestions && (
-                            <div>
-                              <span className="text-xs font-semibold text-gray-500">Suggestions</span>
-                              <ul className="list-disc list-inside text-sm text-gray-700 mt-1">
-                                {(Array.isArray(jdMatchResult.suggestions)
-                                  ? jdMatchResult.suggestions
-                                  : [jdMatchResult.suggestions]
-                                ).map((s: string, i: number) => (
-                                  <li key={i}>{s}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </Card.Body>
-                  </Card>
-                </div>
-              )}
-              {activeSection === "templates" && (
-                <div className="pt-2">
-                  <ResumeTemplates />
-                </div>
-              )}
+            <div className="pt-12">
+              {renderFormContent()}
             </div>
           </Card>
         </div>
+      )}
 
-        {/* Right Column: Preview (always visible on desktop) */}
-        <div className="space-y-6 min-w-0">
-          <Card className="sticky top-24">
-            <Card.Header>
-              <div className="flex items-center justify-between">
-                <h3 className={THEME.components.typography.cardTitle}>Live Preview</h3>
-                <div className="flex gap-2">
+      {/* ═══════════════════════════════════════════ */}
+      {/* MODE: SPLIT — form left, preview right      */}
+      {/* ═══════════════════════════════════════════ */}
+      {viewMode === 'split' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column: Form */}
+          <div className="space-y-6">
+            <Card noPadding>
+              {/* Tab Navigation with Scroll Arrows */}
+              <div className="relative">
+                {showLeftArrow && (
                   <button
-                    onClick={handleViewFullscreen}
-                    title="View resume"
-                    className="p-2 rounded-lg text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                    onClick={() => scrollTabs('left')}
+                    className="absolute left-0 top-0 bottom-0 z-10 bg-gradient-to-r from-white via-white to-transparent px-2 flex items-center justify-center transition-all"
                   >
-                    <FiEye size={18} />
+                    <div className="bg-white hover:bg-gray-50 rounded-full p-1 shadow-md border border-gray-200">
+                      <svg className="w-3.5 h-3.5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </div>
                   </button>
+                )}
+                {showRightArrow && (
                   <button
-                    onClick={handleDownloadPdf}
-                    className={`${THEME.components.button.primary} px-3 py-1.5 text-xs flex items-center gap-2 ${!templateId ? 'opacity-50' : ''}`}
+                    onClick={() => scrollTabs('right')}
+                    className="absolute right-0 top-0 bottom-0 z-10 bg-gradient-to-l from-white via-white to-transparent px-2 flex items-center justify-center transition-all"
                   >
-                    <FiDownload size={16} />
-                    Download PDF
+                    <div className="bg-white hover:bg-gray-50 rounded-full p-1 shadow-md border border-gray-200">
+                      <svg className="w-3.5 h-3.5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </button>
+                )}
+                <div
+                  ref={scrollContainerRef}
+                  className="flex border-b border-gray-100 overflow-x-auto scrollbar-hide px-4"
+                >
+                  {sections.map((section) => (
+                    <button
+                      key={section.id}
+                      onClick={() => setActiveSection(section.id)}
+                      className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${activeSection === section.id
+                        ? `text-purple-600 border-b-2 border-purple-600 bg-purple-50`
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                      {section.icon}
+                      {section.label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setActiveSection("templates")}
+                    className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${activeSection === "templates"
+                      ? `text-purple-600 border-b-2 border-purple-600 bg-purple-50`
+                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                      }`}
+                  >
+                    <FiLayout size={18} />
+                    Templates
                   </button>
                 </div>
               </div>
-            </Card.Header>
-            <Card.Content>
-              <div className={`border border-gray-200 rounded-lg bg-white min-h-[600px] shadow-sm flex justify-center overflow-hidden ${templateId ? 'p-0' : 'p-8'}`}>
-                {templateId ? (
-                  <div className="relative h-[800px] w-full">
-                    <LivePreview templateId={templateId} groupedData={getGroupedData()} scale={0.55} />
-                  </div>
-                ) : (
-                  <ResumePreview data={resumeData} />
-                )}
-              </div>
-            </Card.Content>
-          </Card>
 
-          {/* Matching Jobs */}
-          {resumeData.personalInfo.fullName && (
-            <Card>
+              {renderFormContent()}
+            </Card>
+          </div>
+
+          {/* Right Column: Preview */}
+          <div className="space-y-6 min-w-0">
+            <Card className="sticky top-24">
               <Card.Header>
-                <div className="flex items-center gap-2">
-                  <FiBriefcase size={16} className="text-purple-600" />
-                  <h4 className="text-sm font-bold text-gray-900">Matching Jobs</h4>
+                <div className="flex items-center justify-between">
+                  <h3 className={THEME.components.typography.cardTitle}>Live Preview</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setViewMode('preview')}
+                      title="Full Preview"
+                      className="p-2 rounded-lg text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                    >
+                      <FiMaximize2 size={18} />
+                    </button>
+                    <button
+                      onClick={handleDownloadPdf}
+                      className={`${THEME.components.button.primary} px-3 py-1.5 text-xs flex items-center gap-2 ${!templateId ? 'opacity-50' : ''}`}
+                    >
+                      <FiDownload size={16} /> Download PDF
+                    </button>
+                  </div>
                 </div>
               </Card.Header>
               <Card.Content>
-                <p className="text-xs text-gray-500">
-                  Complete your resume with a template and download it to start applying. Employers look for well-formatted, ATS-friendly resumes.
-                </p>
-                <Link
-                  href="/profile/jobs?tab=browse"
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-purple-600 hover:text-purple-700 transition-colors"
-                >
-                  Browse Jobs →
-                </Link>
+                <div className={`border border-gray-200 rounded-lg bg-white min-h-[600px] shadow-sm flex justify-center overflow-hidden ${templateId ? 'p-0' : 'p-8'}`}>
+                  {templateId ? (
+                    <div className="relative w-full h-[800px]">
+                      <LivePreview templateId={templateId} groupedData={getGroupedData()} scale={0.55} />
+                    </div>
+                  ) : (
+                    <ResumePreview data={resumeData} />
+                  )}
+                </div>
               </Card.Content>
             </Card>
-          )}
+
+            {/* Matching Jobs */}
+            {resumeData.personalInfo.fullName && (
+              <Card>
+                <Card.Header>
+                  <div className="flex items-center gap-2">
+                    <FiBriefcase size={16} className="text-purple-600" />
+                    <h4 className="text-sm font-bold text-gray-900">Matching Jobs</h4>
+                  </div>
+                </Card.Header>
+                <Card.Content>
+                  <p className="text-xs text-gray-500">
+                    Complete your resume with a template and download it to start applying. Employers look for well-formatted, ATS-friendly resumes.
+                  </p>
+                  <Link
+                    href="/profile/jobs?tab=browse"
+                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-purple-600 hover:text-purple-700 transition-colors"
+                  >
+                    Browse Jobs →
+                  </Link>
+                </Card.Content>
+              </Card>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Mobile Bottom Bar - Preview & Save */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 z-40 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
