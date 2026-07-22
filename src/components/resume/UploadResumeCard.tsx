@@ -50,9 +50,15 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
   };
 
   const doUpload = async (file: File) => {
-    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const validTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'image/png',
+      'image/jpeg',
+    ];
     if (!validTypes.includes(file.type)) {
-      toast.error('Please upload a PDF or DOCX file.');
+      toast.error('Accepted formats: PDF, DOCX, TXT, PNG, JPG');
       return;
     }
 
@@ -66,8 +72,8 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
 
       const { data } = await resumeApiClient.post("/api/upload-resume", formData, { timeout: UPLOAD_TIMEOUT });
 
-      if (data.status === 200 && data.data) {
-        const parsedData = data.data;
+      if (data.ok && data.resume) {
+        const parsedData = data.resume;
         const resumeDataForBuilder = {
           personalInfo: {
             fullName: parsedData.basics?.name || "",
@@ -111,7 +117,7 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
         if (data.ats_scores) {
           localStorage.setItem(`atsScores_${uploadId}`, JSON.stringify(data.ats_scores));
         }
-        toast.success(data.message || 'Resume parsed successfully!');
+        toast.success('Resume parsed successfully!');
         navigateToBuilder(uploadId);
       } else {
         throw new Error(data.message || "Failed to parse resume");
@@ -121,7 +127,7 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
       console.error("Message:", error.message);
       setFailedFile(file);
       const sampleId = 'sample_' + Date.now();
-      const fileName = file.name.replace(/\.(pdf|docx)$/i, '');
+      const fileName = file.name.replace(/\.(pdf|docx|txt|png|jpg|jpeg)$/i, '');
       const sampleData = {
         personalInfo: { fullName: fileName, email: '', phone: '', location: '', linkedin: '', portfolio: '' },
         summary: '',
@@ -155,7 +161,7 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
 
   return (
     <>
-      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf,.docx" className="hidden" />
+      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf,.docx,.txt,.png,.jpg,.jpeg" className="hidden" />
       <Card
         className={`h-full min-h-[160px] md:min-h-[200px] border-2 border-dashed border-gray-300 hover:border-purple-400 bg-gray-50 hover:bg-white transition-all duration-300 group flex flex-col items-center justify-center gap-4 ${isUploading ? 'cursor-wait opacity-75' : 'cursor-pointer'}`}
         noPadding
@@ -198,7 +204,7 @@ const UploadResumeCard: React.FC<UploadResumeCardProps> = ({ onClick }) => {
             </div>
             <div className="text-center px-4">
               <h3 className={`${THEME.components.typography.cardTitle} text-gray-500 group-hover:text-purple-600 transition-colors duration-300`}>Upload Resume</h3>
-              <p className={`${THEME.components.typography.meta} mt-1`}>Upload your existing PDF or Docx file</p>
+              <p className={`${THEME.components.typography.meta} mt-1`}>Upload your existing PDF, DOCX, TXT, PNG or JPG file</p>
             </div>
           </>
         )}

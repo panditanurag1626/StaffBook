@@ -366,7 +366,7 @@ export default function ResumeContent({ queryParam = 'tab' }: ResumeContentProps
                 <CreateResumeCard />
               </div>
               <div className="cursor-pointer">
-                <UploadResumeCard onClick={() => handleTabChange("uploadBuilder")} />
+                <UploadResumeCard />
               </div>
               <div onClick={() => handleTabChange("templates")} className="cursor-pointer">
                 <ExploreTemplatesCard />
